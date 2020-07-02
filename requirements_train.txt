@@ -1,0 +1,9 @@
+tqdm==4.31.1
+astropy==3.0.2
+seaborn==0.8.1
+numpy==1.16.4
+matplotlib==2.2.2
+h5py==2.7.1
+pandas==1.0.3
+keras==2.4.3
+scikit_learn==0.23.1
