@@ -3,8 +3,13 @@ from typing import List
 
 
 class PreprocessingModule:
-    def __init__(self):
-        self.converter = "C:/Program Files/FFmpeg/bin/ffmpeg.exe"
+    def __init__(self, converter):
+        """
+        Constructor of the preprocessing module.
+        
+        :param converter: path to the executable ffmpeg converter.
+        """
+        self.converter = converter
 
     def convert_to_wav(self, path_to_video, path_to_audio):
         """
