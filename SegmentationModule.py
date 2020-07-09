@@ -6,7 +6,7 @@ import datetime
 
 import SegmSubmodules.Models as Models
 import SegmSubmodules.Evalutation as Eval
-import SegmSubmodules.PredictionCutter
+import SegmSubmodules.PredictionCutter as Cutter
 
 
 class SegmentationModule:
@@ -41,13 +41,11 @@ class SegmentationModule:
 
     @staticmethod
     def cut_wav(path_to_wav, target_path, prediction_intervals):
-        # Not implemented yet
-        pass
+        Cutter.cut_file(path_to_wav, target_path, prediction_intervals)
 
     @staticmethod
     def cut_video(path_to_video, target_path, prediction_intervals):
-        # Not implemented yet
-        pass
+        Cutter.cut_file(path_to_video, target_path, prediction_intervals, ".mp4")
 
     def evaluate(self, x_test, y_test, target_path):
         roc_fname = target_path + "\\roc_curve.png"
