@@ -39,7 +39,7 @@ class PreprocessingModule:
         """
         pass
 
-    @staticmethod
+    @classmethod  # @staticmethod (?)
     def __preprocess_meta(path_to_meta, subs=False) -> List:
         """
         Converts different meta-info types (subtitles and segment) into a unified binary format,
