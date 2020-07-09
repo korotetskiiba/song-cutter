@@ -5,6 +5,8 @@ from sklearn.metrics import log_loss, f1_score, r2_score, confusion_matrix, clas
 
 
 def draw_mask_plots(prediction, ground_truth, plot_file):
+    # Have to add captions, tags and labels
+    plt.figure()
     plt.plot([x for x in range(len(prediction))], prediction, [x for x in range(len(prediction))], ground_truth)
     plt.savefig(plot_file)
 
@@ -13,7 +15,7 @@ def count_metrics_on_sample(prediction, ground_truth, json_file):
     with open(json_file, 'w') as f:
         json_dict = {}
 
-        corr = np.corrcoef(prediction, ground_truth)[1, 1]  # get Pearson's correlation coefficient
+        corr = np.corrcoef(prediction, ground_truth)[1, 0]  # get Pearson's correlation coefficient
         json_dict["corr"] = corr
         json.dump(json_dict, f)
         # need add more metrics

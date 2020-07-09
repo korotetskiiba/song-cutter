@@ -25,15 +25,19 @@ class SegmentationModule:
         self.model.fit(x_train, y_tr_crf, batch_size=batch_size, validation_data=(x_valid, y_val_crf), epochs=epochs,
                        callbacks=callback_list)
 
-    def predict(self, x_data, checkpoint_file=None):
-        if self.model is None:
-            self.model = Models.load_from_cpt(checkpoint_file)
+    def load_from_checkpoint(self, checkpoint_file):
+        self.model = Models.load_from_cpt(checkpoint_file)
+
+    def predict(self, x_data):
+        # self.model must not be None
         sample_mask = self.__get_raw_prediction(x_data)
         smooth_mask = self.__get_smooth_mask(sample_mask)
         absolute_intervals = self.__get_intervals_by_mask(smooth_mask)
         time_intervals = self.__abs_intervals_to_time(absolute_intervals)
         return time_intervals
 
+    def get_model(self):
+        return self.model
 
     @staticmethod
     def cut_wav(path_to_wav, target_path, prediction_intervals):
@@ -74,7 +78,10 @@ class SegmentationModule:
         return crf_y_tr, crf_y_val
 
     def __get_raw_prediction(self, x_data):
-        return Models.predict_mask_long_sample(x_data, self.model)
+        mask = Models.predict_mask_long_sample(x_data, self.model)
+        # invert mask
+        mask = [1 - v for v in mask]
+        return mask
 
     @staticmethod
     def __get_smooth_mask(sample_mask):
@@ -83,9 +90,6 @@ class SegmentationModule:
 
         # Convolve data
         smooth_mask = convolve(sample_mask, g_kernel, boundary='extend')
-
-        # invert mask
-        smooth_mask = [1 - v for v in smooth_mask]
 
         # to binary mask
         round_border = 0.3

@@ -44,7 +44,7 @@ def predict_mask_long_sample(x_data, crf_model):
         q = q[0, :, 0]
         sample_mask[i * SEQ_LEN:(i + 1) * SEQ_LEN, 0] = q
 
-    q = crf_model.predict(sample_mask[:, tracks * SEQ_LEN:, :])
+    q = crf_model.predict(x_data[:, tracks * SEQ_LEN:, :])
     q = q[0, :, 0]
     sample_mask[tracks * SEQ_LEN:, 0] = q
     sample_mask = sample_mask.reshape(-1)
