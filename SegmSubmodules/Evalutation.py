@@ -5,6 +5,12 @@ from sklearn.metrics import log_loss, f1_score, r2_score, confusion_matrix, clas
 
 
 def draw_mask_plots(prediction, ground_truth, plot_file):
+    """Draws plots of the predicted and ground truth mask and saves it to plot_file as image
+
+    Args:
+        prediction: the prediction binary mask vector
+        ground_truth: the ground truth binary mask vector
+        plot_file: path to file where plot will be saved"""
     # Have to add captions, tags and labels
     plt.figure()
     plt.plot([x for x in range(len(prediction))], prediction, [x for x in range(len(prediction))], ground_truth)
@@ -12,6 +18,12 @@ def draw_mask_plots(prediction, ground_truth, plot_file):
 
 
 def count_metrics_on_sample(prediction, ground_truth, json_file):
+    """Counts metrics for passed prediction and saves it to file in .JSON format
+
+    Args:
+        prediction: the prediction binary mask vector
+        ground_truth: the ground truth binary mask vector
+        json_file: path to json file to save metrics"""
     with open(json_file, 'w') as f:
         json_dict = {}
 
@@ -22,6 +34,13 @@ def count_metrics_on_sample(prediction, ground_truth, json_file):
 
 
 def draw_roc(pred_raw, pred_smooth, ground_truth, roc_curve_file):
+    """Draws plot of the ROC curve for the predictions (raw and smooth) and saves it to file as image
+
+    Args:
+        pred_raw: the prediction binary mask vector
+        pred_smooth: the prediction binary mask vector after smoothing
+        ground_truth: the ground truth binary mask vector
+        roc_curve_file: path to the file where plot will be saved"""
     fpr = {}
     tpr = {}
     roc_auc = {}
@@ -45,8 +64,13 @@ def draw_roc(pred_raw, pred_smooth, ground_truth, roc_curve_file):
 
 
 class GroundTruthHardcoder:
+    """This class can be used to evaluate model. Here are methods with hardcoded labels for some data"""
     @staticmethod
     def get_epica():
+        """Get ground truth mask for Epica video
+
+        Returns:
+            the ground truth mask for Epica video"""
         ratio = 100 / 96  # as 100 VGG embeddings are 96 seconds
         q_len = 1112  # length of the sample
         true_value = np.zeros(q_len, dtype=np.float32)
@@ -58,6 +82,10 @@ class GroundTruthHardcoder:
 
     @staticmethod
     def get_voice_india():
+        """Get ground truth mask for Voice India video
+
+        Returns:
+            the ground truth mask for Voice India video"""
         ratio = 100 / 96  # as 100 VGG embeddings are 96 seconds
         q_len = 833  # length of the sample
         true_value = np.zeros(q_len, dtype=np.float32)

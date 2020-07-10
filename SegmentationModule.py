@@ -9,6 +9,7 @@ import SegmSubmodules.PredictionCutter as Cutter
 
 
 class SegmentationModule:
+    """This class represents pipeline module responsible for segmentation"""
 
     # public:
     def __init__(self):

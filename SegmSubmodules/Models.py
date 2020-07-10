@@ -13,8 +13,12 @@ SEQ_LEN = 100  # constant
 
 
 def build_model():
+    """Builds default baseline model with CRF as the last layer and custom object corresponding to CRF
+
+    Returns:
+        keras compiled model"""
     # define model with CRF
-    embed_dim = 128
+    embed_dim = 128  # better pass as parameter
 
     input = Input(shape=(None, embed_dim,))
     model = Bidirectional(GRU(units=64, return_sequences=True,
@@ -31,11 +35,28 @@ def build_model():
 
 
 def load_from_cpt(path):
+    """Loads keras baseline model with custom objects from checkpoint
+
+    Args:
+        path: path to the model checkpoint
+
+    Returns:
+        loaded keras model"""
     model = load_model(path, custom_objects=__create_custom_objects())
     return model
 
 
 def predict_mask_long_sample(x_data, crf_model):
+    """Make model prediction on tensor longer than model process with a single iteration. Cut X into equal pieces and
+    predict on them
+
+    Args:
+        x_data: tensor of embeddings to make prediction
+
+        crf_model: keras model with crf as the last layer
+
+    Returns:
+        prediction for the whole input tensor (binary mask vector)"""
     single_dim_sample = x_data.shape[1]
     tracks = int(single_dim_sample / SEQ_LEN)
     sample_mask = np.zeros((single_dim_sample, 1), dtype=np.float32)
@@ -53,6 +74,15 @@ def predict_mask_long_sample(x_data, crf_model):
 
 
 def data_to_crf(y_tr, y_val):
+    """Translates label tensors from data generator format to CRF-supportable format
+
+    Args:
+        y_tr: train labels
+
+        y_val: validation labels
+
+    Returns:
+        crf_y_tr, crf_y_val where crf_y_tr is train labels and crf_y_val is validation labels suitable for the model"""
     # convert data for CRF format
     crf_y_tr = [to_categorical(i, num_classes=2) for i in y_tr]
     crf_y_val = [to_categorical(i, num_classes=2) for i in y_val]
@@ -64,6 +94,10 @@ def data_to_crf(y_tr, y_val):
 
 # private:
 def __create_custom_objects():
+    """Create custom objects to properly load keras model with CRF as the last layer
+
+    Returns:
+        custom objects dictionary which can be instantly passed as custom object parameter to load function"""
     # make some preparation to properly load objects from keras_contribute
     instance_holder = {"instance": None}
 
@@ -85,5 +119,6 @@ def __create_custom_objects():
 
 
 if __name__ == "__main__":
+    """This is used to test if the script can build default model"""
     model = build_model()
     model.summary()
