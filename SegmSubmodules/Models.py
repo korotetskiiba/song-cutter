@@ -12,14 +12,12 @@ from keras.utils import to_categorical
 SEQ_LEN = 100  # constant
 
 
-def build_model():
+def build_model(embed_dim=128):
     """Builds default baseline model with CRF as the last layer and custom object corresponding to CRF
 
     Returns:
         keras compiled model"""
     # define model with CRF
-    embed_dim = 128  # better pass as parameter
-
     input = Input(shape=(None, embed_dim,))
     model = Bidirectional(GRU(units=64, return_sequences=True,
                                   recurrent_dropout=0.2))(input)  # variational biGRU
