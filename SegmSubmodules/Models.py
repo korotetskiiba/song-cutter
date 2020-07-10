@@ -6,6 +6,7 @@ from keras.layers.wrappers import Bidirectional
 from keras.layers import Input, GRU
 from keras.models import Model
 from keras.models import load_model
+from keras.utils import to_categorical
 
 
 SEQ_LEN = 100  # constant
@@ -49,6 +50,16 @@ def predict_mask_long_sample(x_data, crf_model):
     sample_mask[tracks * SEQ_LEN:, 0] = q
     sample_mask = sample_mask.reshape(-1)
     return sample_mask
+
+
+def data_to_crf(y_tr, y_val):
+    # convert data for CRF format
+    crf_y_tr = [to_categorical(i, num_classes=2) for i in y_tr]
+    crf_y_val = [to_categorical(i, num_classes=2) for i in y_val]
+
+    crf_y_tr = np.array(crf_y_tr)
+    crf_y_val = np.array(crf_y_val)
+    return crf_y_tr, crf_y_val
 
 
 # private:

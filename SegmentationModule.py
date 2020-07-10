@@ -1,5 +1,4 @@
 import numpy as np
-from keras.utils import to_categorical
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping
 from astropy.convolution import Gaussian1DKernel, convolve
 import datetime
@@ -13,12 +12,23 @@ class SegmentationModule:
 
     # public:
     def __init__(self):
+        """Initializes module"""
         self.model = None
 
     def exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, epochs=30, batch_size=32):
+        """Creates model and launches fit. Trained model stored in self.model
+
+        Args:
+            x_train: train data tensor (number of samples, duration, embedding)
+            x_valid: validation data tensor
+            y_train: train data labels tensor
+            y_valid: validation data labels tensor
+            checkpoint_file: name of file where checkpoints will be saved
+            epochs: the number of epochs to fit
+            batch_size: the number of samples in a single batch to fit"""
         if self.model is None:
             self.__build_new_model()
-        y_tr_crf, y_val_crf = self.__data_to_crf(y_train, y_valid)
+        y_tr_crf, y_val_crf = Models.data_to_crf(y_train, y_valid)
 
         callback_list = self.__define_callback_list(checkpoint_file)
 
@@ -26,9 +36,22 @@ class SegmentationModule:
                        callbacks=callback_list)
 
     def load_from_checkpoint(self, checkpoint_file):
+        """Loads trained model into self.model from checkpoint file
+
+        Args:
+            checkpoint_file: file *.h5 with model weights"""
         self.model = Models.load_from_cpt(checkpoint_file)
 
     def predict(self, x_data):
+        """Makes prediction on x_data. Model should be loaded or trained before predict called
+
+        Args:
+             x_data: tensor of embeddings to make prediction
+
+        Returns:
+            the list of time intervals where time interval is a list of the beginning time and the end time,
+            time stored in strings in format: 'hh:mm:ss'
+        """
         # self.model must not be None
         sample_mask = self.__get_raw_prediction(x_data)
         smooth_mask = self.__get_smooth_mask(sample_mask)
@@ -37,17 +60,46 @@ class SegmentationModule:
         return time_intervals
 
     def get_model(self):
+        """Get current trained or loaded model. For example, this may be used to show model summary
+
+        Returns:
+            keras model stored in self.model"""
         return self.model
 
     @staticmethod
     def cut_wav(path_to_wav, target_path, prediction_intervals):
+        """Cut wav file according to time intervals given by prediction. Pieces of sound file will be saved as
+        target_path + '_piece_' + piece_number + '.wav'
+
+        Args:
+             path_to_wav: path to .wav sound file to be cut
+             target_path: path to directory where pieces of sound file will be saved
+             prediction_intervals: the list of intervals where interval is the list of strings (the beginning
+             time and the end time in format 'hh:mm:ss')
+        """
         Cutter.cut_file(path_to_wav, target_path, prediction_intervals)
 
     @staticmethod
     def cut_video(path_to_video, target_path, prediction_intervals):
+        """Cut video file according to time intervals given by prediction. Pieces of video file will be saved as
+                target_path + '_piece_' + piece_number + '.mp4'
+
+                Args:
+                     path_to_video: path to .mp4 video file to be cut
+                     target_path: path to directory where pieces of video file will be saved
+                     prediction_intervals: the list of intervals where interval is the list of strings (the beginning
+                     time and the end time in format 'hh:mm:ss')
+                """
         Cutter.cut_file(path_to_video, target_path, prediction_intervals, ".mp4")
 
     def evaluate(self, x_test, y_test, target_path):
+        """Evaluate trained or loaded model on test data. Saves plots and metrics to the target_path
+
+        Args:
+             x_test: test data tensor of embeddings
+             y_test: ground truth
+             target_path: directory where plots and metrics will be saved
+        """
         roc_fname = target_path + "\\roc_curve.png"
         mask_plot_fname = target_path + "\\masks.png"
         metrics_fname = target_path + "\\metrics.json"
@@ -62,20 +114,17 @@ class SegmentationModule:
 
     # private:
     def __build_new_model(self):
+        """Build default model with CRF as the last layer and stores it in self.model"""
         self.model = Models.build_model()
 
-    @staticmethod
-    # this method may move to the Models.SegmCRFModelCreator
-    def __data_to_crf(y_tr, y_val):
-        # convert data for CRF format
-        crf_y_tr = [to_categorical(i, num_classes=2) for i in y_tr]
-        crf_y_val = [to_categorical(i, num_classes=2) for i in y_val]
-
-        crf_y_tr = np.array(crf_y_tr)
-        crf_y_val = np.array(crf_y_val)
-        return crf_y_tr, crf_y_val
-
     def __get_raw_prediction(self, x_data):
+        """Gets raw prediction (binary mask vector corresponding to embeddings)
+
+        Args:
+            x_data: data tensor of embeddings to make predictions
+
+        Returns:
+            binary mask vector of predictions"""
         mask = Models.predict_mask_long_sample(x_data, self.model)
         # invert mask
         mask = [1 - v for v in mask]
@@ -83,6 +132,13 @@ class SegmentationModule:
 
     @staticmethod
     def __get_smooth_mask(sample_mask):
+        """Applies filter to the raw mask to smooth it
+
+        Args:
+            sample_mask: binary mask vector of predictions
+
+        Returns:
+            smooth mask (binary mask vector)"""
         # Create kernel
         g_kernel = Gaussian1DKernel(stddev=5)
 
@@ -96,6 +152,14 @@ class SegmentationModule:
 
     @staticmethod
     def __get_intervals_by_mask(mask):
+        """Translate mask as prediction to the intervals (time codes)
+
+            Args:
+                mask: prediction mask vector
+
+            Returns:
+                the list of time intervals where time interval is the list of the beginning time and
+                the end time. Time stored as indexes of embeddings"""
         idxs = np.nonzero(mask)[0]
 
         max_lag = 4
@@ -123,6 +187,15 @@ class SegmentationModule:
 
     @staticmethod
     def __abs_intervals_to_time(abs_intervals):
+        """Translate mask with indexes of embeddings to time intervals
+
+        Args:
+            abs_intervals: the list of time intervals where time interval is the list of the beginning time and
+                the end time. Time stored as indexes of embeddings
+
+        Returns:
+            the list of time intervals where time interval is the list of the beginning time and the end time. Time
+            stored as string of format 'hh:mm:ss' """
         sec_to_time = lambda arg: str(datetime.timedelta(seconds=arg))
         vgg_rescale = 0.96  # 100 embeddings of VGG is 96 seconds
         intervals = [[sec_to_time(int(vgg_rescale * q)) for q in v] for v in abs_intervals]
@@ -130,6 +203,14 @@ class SegmentationModule:
 
     @staticmethod
     def __define_callback_list(checkpoint_file):
+        """Get callbacks list to pass it to the fit. Callbacks include learning rate scheduler, checkpoint and
+        early stopping
+
+        Args:
+            checkpoint_file: path to file where model checkpoint will be saved
+
+        Returns:
+            the list of callbacks which can be passed to fit as callback parameter instantly"""
         # define learning rate schedule
         lr_scheduler_callback = LearningRateScheduler(lambda epoch: 0.001 if epoch < 3 else 0.0003)
 
