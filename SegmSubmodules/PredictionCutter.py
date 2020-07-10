@@ -15,16 +15,17 @@ def cut_file(path_to_file, target_path, prediction_intervals, extension=".wav"):
         stored as string in format 'hh:mm:ss'
 
         extension: target extension (e. g., ".wav" for sound)"""
-    i = 1
+    i = 1  # counter for video piece
     for interval in prediction_intervals:
-        timedelta_interval = __time_to_seconds(interval)
-        begin = timedelta_interval[0].total_seconds()
+        timedelta_interval = __time_to_seconds(interval)  # convert to timedelta interval
+        begin = timedelta_interval[0].total_seconds()  # convert to total seconds as ffmpeg gets seconds
         end = timedelta_interval[1].total_seconds()
-        end = end - begin  # translate end from absolute bias to bias from begin
-        piece_name = target_path + "_piece_" + str(i) + extension
+        duration = end - begin
+        piece_name = target_path + "_piece_" + str(i) + extension  # create name of the file to save piece
 
-        command = "ffmpeg -i {} -ss {} -t {} -acodec copy {}".format(path_to_file, begin, end, piece_name)
-        subprocess.call(command, shell=True)
+        # create ffmpeg command
+        command = "ffmpeg -i {} -ss {} -t {} -acodec copy {}".format(path_to_file, begin, duration, piece_name)
+        subprocess.call(command, shell=True)  # run command
         i += 1
 
 
@@ -36,11 +37,11 @@ def __time_to_seconds(interval):
 
     Returns:
         the list of the beginning and the end time stored as timedelta objects"""
-    timedelta_interval = []
+    timedelta_interval = []  # list for the answer
     for part in interval:
-        date_time_obj = datetime.datetime.strptime(part, '%H:%M:%S')
+        date_time_obj = datetime.datetime.strptime(part, '%H:%M:%S')  # parse time to datetime
         timedelta_obj = datetime.timedelta(hours=date_time_obj.hour, minutes=date_time_obj.minute,
-                                           seconds=date_time_obj.second)
+                                           seconds=date_time_obj.second)  # convert to timedelta
         timedelta_interval.append(timedelta_obj)
     return timedelta_interval
 

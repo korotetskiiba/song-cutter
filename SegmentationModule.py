@@ -27,9 +27,9 @@ class SegmentationModule:
             checkpoint_file: name of file where checkpoints will be saved
             epochs: the number of epochs to fit
             batch_size: the number of samples in a single batch to fit"""
-        if self.model is None:
+        if self.model is None:  # build default model
             self.__build_new_model()
-        y_tr_crf, y_val_crf = Models.data_to_crf(y_train, y_valid)
+        y_tr_crf, y_val_crf = Models.data_to_crf(y_train, y_valid)  # convert to CRF-suitable format
 
         callback_list = self.__define_callback_list(checkpoint_file)
 
@@ -54,10 +54,10 @@ class SegmentationModule:
             time stored in strings in format: 'hh:mm:ss'
         """
         # self.model must not be None
-        sample_mask = self.__get_raw_prediction(x_data)
-        smooth_mask = self.__get_smooth_mask(sample_mask)
-        absolute_intervals = self.__get_intervals_by_mask(smooth_mask)
-        time_intervals = self.__abs_intervals_to_time(absolute_intervals)
+        sample_mask = self.__get_raw_prediction(x_data)  # firstly, get raw prediction
+        smooth_mask = self.__get_smooth_mask(sample_mask)  # smooth mask
+        absolute_intervals = self.__get_intervals_by_mask(smooth_mask)  # convert mask to embedding intervals
+        time_intervals = self.__abs_intervals_to_time(absolute_intervals)  # convert intervals to time intervals
         return time_intervals
 
     def get_model(self):
@@ -101,17 +101,17 @@ class SegmentationModule:
              y_test: ground truth
              target_path: directory where plots and metrics will be saved
         """
-        roc_fname = target_path + "\\roc_curve.png"
+        roc_fname = target_path + "\\roc_curve.png"  # create names for artifacts
         mask_plot_fname = target_path + "\\masks.png"
         metrics_fname = target_path + "\\metrics.json"
 
-        sample_mask = self.__get_raw_prediction(x_test)
-        smooth_mask = self.__get_smooth_mask(sample_mask)
+        sample_mask = self.__get_raw_prediction(x_test)  # raw prediction
+        smooth_mask = self.__get_smooth_mask(sample_mask)  # smooth prediction
 
         # create all reports
-        Eval.count_metrics_on_sample(smooth_mask, y_test, metrics_fname)
-        Eval.draw_roc(sample_mask, smooth_mask, y_test, roc_fname)
-        Eval.draw_mask_plots(smooth_mask, y_test, mask_plot_fname)
+        Eval.count_metrics_on_sample(smooth_mask, y_test, metrics_fname)  # count metrics
+        Eval.draw_roc(sample_mask, smooth_mask, y_test, roc_fname)  # draw ROC curve
+        Eval.draw_mask_plots(smooth_mask, y_test, mask_plot_fname)  # draw plot of prediction and ground truth
 
     # private:
     def __build_new_model(self):
@@ -147,7 +147,7 @@ class SegmentationModule:
         smooth_mask = convolve(sample_mask, g_kernel, boundary='extend')
 
         # to binary mask
-        round_border = 0.3
+        round_border = 0.3  # if value is higher, it's musical embedding
         smooth_mask = [int(t > round_border) for t in smooth_mask]
         return smooth_mask
 
@@ -161,14 +161,14 @@ class SegmentationModule:
             Returns:
                 the list of time intervals where time interval is the list of the beginning time and
                 the end time. Time stored as indexes of embeddings"""
-        idxs = np.nonzero(mask)[0]
+        idxs = np.nonzero(mask)[0]  # get indexes of embeddings with music
 
         max_lag = 4
         fragments_list = []
         start_segment = idxs[0]
         finish_segment = idxs[0]
         prev_val = idxs[0]
-        for v in idxs:
+        for v in idxs:  # unite neighbor mask ones into intervals
             if v - prev_val < max_lag:
                 prev_val = v
                 finish_segment = v
@@ -197,8 +197,9 @@ class SegmentationModule:
         Returns:
             the list of time intervals where time interval is the list of the beginning time and the end time. Time
             stored as string of format 'hh:mm:ss' """
-        sec_to_time = lambda arg: str(datetime.timedelta(seconds=arg))
+        sec_to_time = lambda arg: str(datetime.timedelta(seconds=arg))  # callback to translate seconds to string
         vgg_rescale = 0.96  # 100 embeddings of VGG is 96 seconds
+        # translate embedding-time intervals to time-time intervals
         intervals = [[sec_to_time(int(vgg_rescale * q)) for q in v] for v in abs_intervals]
         return intervals
 

@@ -25,11 +25,11 @@ def count_metrics_on_sample(prediction, ground_truth, json_file):
         ground_truth: the ground truth binary mask vector
         json_file: path to json file to save metrics"""
     with open(json_file, 'w') as f:
-        json_dict = {}
+        json_dict = {}  # init dictionary to save
 
         corr = np.corrcoef(prediction, ground_truth)[1, 0]  # get Pearson's correlation coefficient
         json_dict["corr"] = corr
-        json.dump(json_dict, f)
+        json.dump(json_dict, f)  # save dictionary
         # need add more metrics
 
 
@@ -45,10 +45,11 @@ def draw_roc(pred_raw, pred_smooth, ground_truth, roc_curve_file):
     tpr = {}
     roc_auc = {}
     results = {"nn": pred_raw, "smooth_nn": pred_smooth}
-    for k in results:
+    for k in results:  # calculate ROC & AUC
         fpr[k], tpr[k], _ = roc_curve(ground_truth, results[k])
         roc_auc[k] = auc(fpr[k], tpr[k])
 
+    # draw plot
     plt.figure()
     for k in results:
         plt.plot(fpr[k], tpr[k],

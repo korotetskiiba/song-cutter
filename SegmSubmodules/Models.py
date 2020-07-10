@@ -25,10 +25,11 @@ def build_model():
                                   recurrent_dropout=0.2))(input)  # variational biGRU
     model = Dropout(0.2)(model)
     model = TimeDistributed(Dense(16, activation="relu"))(model)  # a dense layer as suggested by neuralNer
-    crf_layer = CRF(2)  # CRF layer
+    crf_layer = CRF(2)  # CRF layer, 2 classes (song and not-song)
     out = crf_layer(model)  # output
 
     model = Model(input, out)
+    # CRF layer requires special loss and metrics
     model.compile(optimizer="adam", loss=crf_layer.loss_function, metrics=[crf_layer.accuracy])
 
     return model
@@ -57,19 +58,19 @@ def predict_mask_long_sample(x_data, crf_model):
 
     Returns:
         prediction for the whole input tensor (binary mask vector)"""
-    single_dim_sample = x_data.shape[1]
-    tracks = int(single_dim_sample / SEQ_LEN)
-    sample_mask = np.zeros((single_dim_sample, 1), dtype=np.float32)
+    single_dim_sample = x_data.shape[1]  # total length
+    tracks = int(single_dim_sample / SEQ_LEN)  # count the number of pieces to predict on
+    sample_mask = np.zeros((single_dim_sample, 1), dtype=np.float32)  # init tensor for the mask
 
-    for i in range(tracks):
+    for i in range(tracks):  # make prediction for each piece
         q = crf_model.predict(x_data[:, i * SEQ_LEN:(i + 1) * SEQ_LEN, :])
         q = q[0, :, 0]
-        sample_mask[i * SEQ_LEN:(i + 1) * SEQ_LEN, 0] = q
+        sample_mask[i * SEQ_LEN:(i + 1) * SEQ_LEN, 0] = q  # add to the sample mask
 
-    q = crf_model.predict(x_data[:, tracks * SEQ_LEN:, :])
+    q = crf_model.predict(x_data[:, tracks * SEQ_LEN:, :])  # predict on the last piece
     q = q[0, :, 0]
     sample_mask[tracks * SEQ_LEN:, 0] = q
-    sample_mask = sample_mask.reshape(-1)
+    sample_mask = sample_mask.reshape(-1)  # reshape mask into binary vector
     return sample_mask
 
 
