@@ -34,25 +34,24 @@ def count_metrics_on_sample(prediction, ground_truth, json_file):
         json_dict["corr"] = corr
 
         f1 = f1_score(prediction, ground_truth)
-        json_dict["f1"] = f1
+        json_dict["f1"] = float(f1)
 
         log_loss_val = log_loss(prediction, ground_truth)
-        json_dict["log_loss"] = log_loss_val
+        json_dict["log_loss"] = float(log_loss_val)
 
         roc_auc = roc_auc_score(prediction, ground_truth)
-        json_dict["roc_auc"] = roc_auc
+        json_dict["roc_auc"] = float(roc_auc)
 
         precision = precision_score(prediction, ground_truth)
-        json_dict["precision"] = precision
+        json_dict["precision"] = float(precision)
 
         recall = recall_score(prediction, ground_truth)
-        json_dict["recall"] = recall
+        json_dict["recall"] = float(recall)
 
         iou = __intersection_over_union(ground_truth, prediction)
-        json_dict["IoU"] = iou
+        json_dict["IoU"] = float(iou)
 
         json.dump(json_dict, f)  # save dictionary
-        # need add more metrics
 
 
 def draw_roc(pred_raw, pred_smooth, ground_truth, roc_curve_file):

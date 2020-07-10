@@ -113,7 +113,7 @@ class SegmentationModule:
              target_path: directory where plots and metrics will be saved
         """
         assert len(x_test.shape) == 3, "X_test shape must be (samples, duration, embeddings)"
-        assert len(y_test.shape) == 3, "Y_test shape must be (samples, duration, 1)"
+        assert len(y_test.shape) == 1, "Y_test shape must be (duration, )"
         roc_fname = target_path + "\\roc_curve.png"  # create names for artifacts
         mask_plot_fname = target_path + "\\masks.png"
         metrics_fname = target_path + "\\metrics.json"
