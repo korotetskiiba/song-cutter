@@ -1,7 +1,9 @@
 import numpy as np
 import json
 import matplotlib.pyplot as plt
-from sklearn.metrics import log_loss, f1_score, r2_score, confusion_matrix, classification_report, roc_curve, auc
+from sklearn.metrics import log_loss, f1_score, r2_score, confusion_matrix, classification_report, roc_curve, auc, \
+    roc_auc_score, precision_score, recall_score
+import keras.backend as K
 
 
 def draw_mask_plots(prediction, ground_truth, plot_file):
@@ -18,7 +20,8 @@ def draw_mask_plots(prediction, ground_truth, plot_file):
 
 
 def count_metrics_on_sample(prediction, ground_truth, json_file):
-    """Counts metrics for passed prediction and saves it to file in .JSON format
+    """Counts metrics for passed prediction and saves it to file in .JSON format. Supported metrics:
+    Pearson's correlation coefficient, f1-score, log_loss, roc_auc, precision, recall, intersection over union
 
     Args:
         prediction: the prediction binary mask vector
@@ -29,6 +32,25 @@ def count_metrics_on_sample(prediction, ground_truth, json_file):
 
         corr = np.corrcoef(prediction, ground_truth)[1, 0]  # get Pearson's correlation coefficient
         json_dict["corr"] = corr
+
+        f1 = f1_score(prediction, ground_truth)
+        json_dict["f1"] = f1
+
+        log_loss_val = log_loss(prediction, ground_truth)
+        json_dict["log_loss"] = log_loss_val
+
+        roc_auc = roc_auc_score(prediction, ground_truth)
+        json_dict["roc_auc"] = roc_auc
+
+        precision = precision_score(prediction, ground_truth)
+        json_dict["precision"] = precision
+
+        recall = recall_score(prediction, ground_truth)
+        json_dict["recall"] = recall
+
+        iou = __intersection_over_union(ground_truth, prediction)
+        json_dict["IoU"] = iou
+
         json.dump(json_dict, f)  # save dictionary
         # need add more metrics
 
@@ -62,6 +84,23 @@ def draw_roc(pred_raw, pred_smooth, ground_truth, roc_curve_file):
     plt.title('Receiver operating characteristic example')
     plt.legend(loc="lower right")
     plt.savefig(roc_curve_file)
+
+
+def __intersection_over_union(true, pred):
+    """This is a function to calculate intersection-over-union metrics
+
+    Args:
+        true: ground truth numpy tensor (binary mask)
+
+        pred: prediction numpy tensor (binary mask)
+
+    Returns:
+        scalar (intersection over union metrics value)"""
+    intersection = true * pred
+    true_inv = 1 - true
+    union = true + (true_inv * pred)
+
+    return K.sum(intersection) / K.sum(union)
 
 
 class GroundTruthHardcoder:
