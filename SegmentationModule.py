@@ -27,6 +27,12 @@ class SegmentationModule:
             checkpoint_file: name of file where checkpoints will be saved
             epochs: the number of epochs to fit
             batch_size: the number of samples in a single batch to fit"""
+        assert len(x_train.shape) == 3, "X_train shape must be (samples, time, embeddings)"
+        assert len(x_valid.shape) == 3, "X_valid shape must be (samples, time, embeddings)"
+        assert len(y_train.shape) == 3, "Y_train shape must be (samples, time, 1)"
+        assert len(y_valid.shape) == 3, "Y_valid shape must be (samples, time, 1)"
+        assert isinstance(checkpoint_file, str) and checkpoint_file.endswith(".h5"), ("Checkpoint file must be string"
+                                                                                      "ends with .h5")
         if self.model is None:  # build default model
             self.__build_new_model()
         y_tr_crf, y_val_crf = Models.data_to_crf(y_train, y_valid)  # convert to CRF-suitable format
@@ -41,6 +47,7 @@ class SegmentationModule:
 
         Args:
             checkpoint_file: file *.h5 with model weights"""
+        assert isinstance(checkpoint_file, str) and checkpoint_file.endswith('.h5'), "Wrong checkpoint file argument"
         self.model = Models.load_from_cpt(checkpoint_file)
 
     def predict(self, x_data):
@@ -53,6 +60,8 @@ class SegmentationModule:
             the list of time intervals where time interval is a list of the beginning time and the end time,
             time stored in strings in format: 'hh:mm:ss'
         """
+        assert self.model is not None, "Can't predict, model has not been loaded yet"
+        assert len(x_data.shape) == 3, "X_data shape must be (samples, duration, embeddings)"
         # self.model must not be None
         sample_mask = self.__get_raw_prediction(x_data)  # firstly, get raw prediction
         smooth_mask = self.__get_smooth_mask(sample_mask)  # smooth mask
@@ -78,6 +87,7 @@ class SegmentationModule:
              prediction_intervals: the list of intervals where interval is the list of strings (the beginning
              time and the end time in format 'hh:mm:ss')
         """
+        assert isinstance(path_to_wav, str) and path_to_wav.endswith(".wav"), "Wrong path to wav-file"
         Cutter.cut_file(path_to_wav, target_path, prediction_intervals)
 
     @staticmethod
@@ -91,6 +101,7 @@ class SegmentationModule:
                      prediction_intervals: the list of intervals where interval is the list of strings (the beginning
                      time and the end time in format 'hh:mm:ss')
                 """
+        assert isinstance(path_to_video, str) and path_to_video.endswith(".mp4"), "Wrong path to wav-file"
         Cutter.cut_file(path_to_video, target_path, prediction_intervals, ".mp4")
 
     def evaluate(self, x_test, y_test, target_path):
@@ -101,6 +112,8 @@ class SegmentationModule:
              y_test: ground truth
              target_path: directory where plots and metrics will be saved
         """
+        assert len(x_test.shape) == 3, "X_test shape must be (samples, duration, embeddings)"
+        assert len(y_test.shape) == 3, "Y_test shape must be (samples, duration, 1)"
         roc_fname = target_path + "\\roc_curve.png"  # create names for artifacts
         mask_plot_fname = target_path + "\\masks.png"
         metrics_fname = target_path + "\\metrics.json"
