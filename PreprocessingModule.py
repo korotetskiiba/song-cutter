@@ -52,9 +52,9 @@ class PreprocessingModule:
         """
         Generates pickle-file - .pkl file with
         dict{"files_list": <list of paths to cuts>, "mask": <bin mask for the whole audio>}.
-        .pkl file with meta is placed in the same dir as the initial audio and named the same way.
+        .pkl file is placed in the same dir as the initial audio and named the same way.
 
-        :param paths_to_cuts: list with all paths to cuts, that were generated based from audio-file;
+        :param paths_to_cuts: list with all paths to cuts, that were generated from audio-file;
         :param bin_mask: binary mask of the whole audio-file;
         :return: void.
         """
