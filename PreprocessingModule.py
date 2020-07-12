@@ -12,7 +12,7 @@ class PreprocessingModule:
     def convert_to_wav(path_to_video, path_to_audio):
         """
         Converts given video to .wav-audio.
-        
+
         :param path_to_video: path to the video to be converted to audio;
         :param path_to_audio: path to where audio is to be placed after conversion;
         :return: void
@@ -27,7 +27,7 @@ class PreprocessingModule:
         Cuts audio in disjoint pieces of fixed size starting from the very beginning.
         The last piece is not included in the result if its length != seq_len.
         The cuts are placed in the same dir as the initial audio-file.
-        
+
         :param path_to_audio: path to the audio to be cut in pieces;
         :param seq_len: length of a desired cut;
         :return: list of all paths to cuts.
@@ -55,7 +55,7 @@ class PreprocessingModule:
         Generates pickle-file - .pkl file with
         dict{"files_list": <list of paths to cuts>, "mask": <bin mask for the whole audio>}.
         .pkl file is placed in the same dir as the initial audio and named the same way.
-        
+
         :param paths_to_cuts: list with all paths to cuts, that were generated from audio-file;
         :param bin_mask: binary mask of the whole audio-file;
         :return: void.
@@ -69,13 +69,15 @@ class PreprocessingModule:
     def __download_from_youtube(link, path_to_video):
         """
         Downloads video from YouTube using the link (found beforehand in the 1st line of meta-info file).
-        
+
         :param link: YouTube link to the video;
         :param path_to_video: path to where video is to be placed after download;
         :return: void
         """
+        dir = os.path.dirname(path_to_video)
+        name = str(os.path.basename(path_to_video).split(".")[0])
         yt = YouTube(link)
-        yt.streams.first().download(path_to_video)
+        yt.streams.first().download(dir, filename=name)
 
     @staticmethod
     def __preprocess_meta(path_to_meta):
@@ -83,17 +85,18 @@ class PreprocessingModule:
         Converts meta-info into a unified binary format,
         where for each second "1" - "song", "0" - "not song".
         Extracts YouTube link if given in the 1st line of the meta-info file.
-        
+
         :param path_to_meta: path to meta-info about the audio;
         :return: binary mask generated based on given meta.
         """
         assert os.path.isfile(path_to_meta), "Meta-info file {} not found".format(path_to_meta)
 
         bin_mask = []
+        link = None
         with open(path_to_meta) as meta:
             for line in meta:
-                link = line.rstrip("\n") if line.startswith("http") else None
-                if link:
+                if line.startswith("http"):
+                    link = line.rstrip("\n")
                     continue
                 start, end, label = line.split(",")
                 start = datetime.strptime(start, '%H:%M:%S')
