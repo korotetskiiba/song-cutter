@@ -1,6 +1,8 @@
 from moviepy.editor import *
 from pytube import YouTube
 from datetime import datetime
+import os
+import argparse
 import pickle
 
 
@@ -10,7 +12,7 @@ class PreprocessingModule:
     def convert_to_wav(path_to_video, path_to_audio):
         """
         Converts given video to .wav-audio.
-
+        
         :param path_to_video: path to the video to be converted to audio;
         :param path_to_audio: path to where audio is to be placed after conversion;
         :return: void
@@ -25,7 +27,7 @@ class PreprocessingModule:
         Cuts audio in disjoint pieces of fixed size starting from the very beginning.
         The last piece is not included in the result if its length != seq_len.
         The cuts are placed in the same dir as the initial audio-file.
-
+        
         :param path_to_audio: path to the audio to be cut in pieces;
         :param seq_len: length of a desired cut;
         :return: list of all paths to cuts.
@@ -37,10 +39,10 @@ class PreprocessingModule:
 
         paths_to_cuts = []
         with AudioFileClip(path_to_audio) as audio:
-            num_cuts = int(audio.duration//seq_len)
+            num_cuts = int(audio.duration // seq_len)
             for cut in range(1, num_cuts + 1):
-                path_to_cut = path_to_cuts + "/" + audiofile_name + str(cut) + ".wav"
-                audio.subclip((cut-1) * seq_len, cut * seq_len).write_audiofile(
+                path_to_cut = os.path.join(path_to_cuts, audiofile_name + str(cut) + ".wav")
+                audio.subclip((cut - 1) * seq_len, cut * seq_len).write_audiofile(
                     path_to_cut,
                     logger=None
                 )
@@ -53,7 +55,7 @@ class PreprocessingModule:
         Generates pickle-file - .pkl file with
         dict{"files_list": <list of paths to cuts>, "mask": <bin mask for the whole audio>}.
         .pkl file is placed in the same dir as the initial audio and named the same way.
-
+        
         :param paths_to_cuts: list with all paths to cuts, that were generated from audio-file;
         :param bin_mask: binary mask of the whole audio-file;
         :return: void.
@@ -67,7 +69,7 @@ class PreprocessingModule:
     def __download_from_youtube(link, path_to_video):
         """
         Downloads video from YouTube using the link (found beforehand in the 1st line of meta-info file).
-
+        
         :param link: YouTube link to the video;
         :param path_to_video: path to where video is to be placed after download;
         :return: void
@@ -81,7 +83,7 @@ class PreprocessingModule:
         Converts meta-info into a unified binary format,
         where for each second "1" - "song", "0" - "not song".
         Extracts YouTube link if given in the 1st line of the meta-info file.
-
+        
         :param path_to_meta: path to meta-info about the audio;
         :return: binary mask generated based on given meta.
         """
@@ -113,6 +115,10 @@ class PreprocessingModule:
     def preprocess_train(path_to_meta, path_to_video, path_to_audio, seq_len=100):
         """
         This method is to be used when training the model.
+        Takes the video either from the given location or downloads using the link, converts it to audio,
+        cuts audio in pieces, translates the segments-info into a binary mask. Creates a pkl file with paths
+        to all audio-cuts and the binary-mask.
+
         :param path_to_meta: path to meta-info about the audio(video);
         :param path_to_video: path to the existing video to be converted to training data
                               (if it doesn't exist can be downloaded from YouTube using the
@@ -122,7 +128,6 @@ class PreprocessingModule:
         :return: void.
         """
         assert os.path.isfile(path_to_meta), "Meta-info file {} not found".format(path_to_meta)
-        assert os.path.isfile(path_to_audio), "Audio file {} not found".format(path_to_audio)
 
         link, bin_mask = PreprocessingModule.__preprocess_meta(path_to_meta)
         if link and not os.path.isfile(path_to_video):
@@ -130,4 +135,22 @@ class PreprocessingModule:
         PreprocessingModule.convert_to_wav(path_to_video, path_to_audio)
         files_list = PreprocessingModule.__cut_in_pieces(path_to_audio, seq_len)
         PreprocessingModule.__generate_pkl(files_list, bin_mask)
-        
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Preprocessing')
+
+    parser.add_argument('-i', action="store", dest="mode")
+    parser.add_argument('-v', action="store", dest="path_to_video")
+    parser.add_argument('-a', action="store", dest="path_to_audio")
+    parser.add_argument('-m', action="store", dest="path_to_meta")
+    parser.add_argument('-s', action="store", dest="seq_len")
+
+    args = parser.parse_args()
+    if args.seq_len is None:
+        args.seq_len = 100
+
+    if args.mode == "train":
+        PreprocessingModule.preprocess_train(args.path_to_meta, args.path_to_video, args.path_to_audio, args.seq_len)
+    else:
+        PreprocessingModule.convert_to_wav(args.path_to_video, args.path_to_audio)
