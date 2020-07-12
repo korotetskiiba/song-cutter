@@ -1,4 +1,4 @@
-from moviepy.editor import *
+from moviepy.editor import VideoFileClip, AudioFileClip
 from pytube import YouTube
 from datetime import datetime
 import os
@@ -34,7 +34,7 @@ class PreprocessingModule:
         """
         assert os.path.isfile(path_to_audio), "Audio file {} not found".format(path_to_audio)
 
-        audiofile_name = os.path.basename(path_to_audio).split(".")[0]
+        audiofile_name = str(os.path.basename(path_to_audio).split(".")[0])
         path_to_cuts = os.path.dirname(path_to_audio)
 
         paths_to_cuts = []
