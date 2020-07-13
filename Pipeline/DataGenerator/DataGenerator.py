@@ -6,7 +6,7 @@ import pickle
 from enum import Enum
 import vggish_params as param
 import os
-# import argparse
+import argparse
 
 
 class KindOfData(Enum):
@@ -16,103 +16,149 @@ class KindOfData(Enum):
 
 
 class DataGenerator:
-    data_audioset = None
-    data_live = None
-    mask_audioset = None
-    mask_live = None
+    #for live sets
+    __data_live = None
+    __mask_live = None
+    #for audio sets
+    __music_data = None
+    __speech_data = None
+    __path_to_audioset_data = './meta_files/bal_train.h5'
+    __path_to_labels = './meta_files/class_labels_indices.csv'
+    __path_to_genres = './meta_files/genres_dump.pkl'
 
     @classmethod
-    def get_generated_sample(cls, type: KindOfData, interval: list, path_to_save=None, name=None):
+    def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets'):
         """
         Get embedding and mask of data
-
         :param type: type of set to get;
-        :param interval: shows which part of the set to get;
-        :return: embedding and mask of set to get;
+        :param relation: relation for the capacities of sets (train:val:test);
+        :param n_samples: the number of samples to generate;
+        :param path_to_live_data: pkl file containing information about masks and embeddings of samples from live set
+        :param path_to_save: path to folder for saving samples;
+        :param name: name of file to save samples
+        :return: result: a dictionary containing train, validation and test samples
         """
+
+        # prepare coefficients
+        s = sum(relation)
+        k = [relation[0] / s]
+        k.append(k[0] + relation[1] / s)
+        k.append(k[1] + relation[2] / s)
+
+        # choose mode
         if type is KindOfData.AUDIOSET:
-            # assert cls.data_audioset,'Should generate audioset samples. Use function generate_audioset_sample'
-            if cls.data_audioset is None:
-                cls.generate_audioset_sample()
-            n = len(cls.data_audioset)
-            data, mask = cls.data_audioset[int(interval[0] * n): int(interval[1] * n)], cls.mask_audioset[int(interval[0] * n): int(interval[1] * n)]
+            result = cls.__get_generated_audioset_samples(n_samples, k)
         elif type is KindOfData.LIVE:
-            # assert cls.data_live,'Should generate live samples. Use function generate_live_sample'
-            if cls.data_live is None:
-                cls.generate_live_sample()
-            n = len(cls.data_live)
-            data, mask = cls.data_live[int(interval[0] * n): int(interval[1] * n)], cls.mask_live[int(interval[0] * n): int(interval[1] * n)]
+            result = cls.__get_generated_live_samples(path_to_live_data, k)
         elif type is KindOfData.ALL:
-            # assert cls.data_audioset and cls.data_live, 'Should generate audioset and live samples. Use function generate_audioset_sample and generate_live_sample'
-            if cls.data_audioset is None:
-                cls.generate_audioset_sample()
-            if cls.data_live is None:
-                cls.generate_live_sample()
-            n = len(cls.data_audioset)
-            m = len(cls.data_live)
-
-            # cut some piece of data
-            data_a = cls.data_audioset[int(interval[0] * n): int(interval[1] * n)]
-            mask_a = cls.mask_audioset[int(interval[0] * n): int(interval[1] * n)]
-            data_l = cls.data_live[int(interval[0] * m): int(interval[1] * m)]
-            mask_l = cls.mask_live[int(interval[0] * m): int(interval[1] * m)]
-            data = np.vstack([data_a, data_l])
-            mask = np.vstack([mask_a, mask_l])
-
-            # shuffle embeddings and masks of different sets in the same order
-            data, mask = cls.__shuffle(data, mask)
+            # generate samples of both type
+            result1 = cls.__get_generated_audioset_samples(n_samples, k)
+            result2 = cls.__get_generated_live_samples(path_to_live_data, k)
+            result = {}
+            # mixed samples
+            for key in result1:
+                data1, mask1 = result1[key]
+                data2, mask2 = result2[key]
+                data = np.vstack([data1, data2])
+                mask = np.vstack([mask1, mask2])
+                # shuffle embeddings and masks of different sets in the same order
+                data, mask = cls.__shuffle(data, mask)
+                result[key] = (data, mask)
+        #save if need
         if path_to_save:
             if not os.path.isdir(path_to_save):
                 os.mkdir(path_to_save)
-            with open(path_to_save +'/'+ name + ".pkl", "wb") as file:
-                pickle.dump({'data': data, 'mask': mask}, file)
-        return data, mask
+            with open(path_to_save + '/' + name + ".pkl", "wb") as file:
+                pickle.dump(result, file)
+        return result
 
     @classmethod
-    def generate_audioset_sample(cls, n_samples, path_to_data='bal_train.h5',
-                                 path_to_labels='class_labels_indices.csv',
-                                 path_to_genres=None):
-        """Generate n samples using AudioSet
-
-        :param n_samples: the number of samples to generate;
-        :param path_to_data: path to the file containing embedding and samples information;
-        :param path_to_labels: path to the file containing information about samples labels;
-        :param path_to_genres: path to the file containing additional samples with genres;
-        :return: void
+    def __get_generated_audioset_samples(cls, n_samples, k):
+        """ Get embedding and mask of audioset data
+            :param n_samples: the number of samples to generate;
+            :param k: coefficients for the capacities of sets (train:val:test);
+            :return: result: a dictionary containing train, validation and test audioset samples
         """
 
-        # extract info from audio set
-        music_data, speech_data = cls.__extract_info_audioset(path_to_data, path_to_labels)
-
-        # extract info about music with genres classification
-        if path_to_genres:
-            music_data_new_res = cls.__extract_music_for_genres(path_to_genres)
-            # add data to sample
-            music_data = np.vstack([music_data, music_data_new_res])
+        # prepare data to generate samples if necessary
+        if cls.__music_data is None:
+            cls.__generate_audioset_sample(n_samples)
 
         # generate samples
-        cls.data_audioset, cls.mask_audioset = cls.__generate_data_sample(music_data, speech_data, n_samples)
+        n_music = len(cls.__music_data)
+        n_speech = len(cls.__speech_data)
+        data_train, mask_train = cls.__generate_data_sample(n_music_min=0, n_music_max=int(n_music * k[0]),
+                                                            n_speech_min=0, n_speech_max=int(k[0] * n_speech),
+                                                            N_samples=int(n_samples * k[0]))
+        data_val, mask_val = cls.__generate_data_sample(n_music_min=int(n_music * k[0]),
+                                                        n_music_max=int(n_music * k[1]),
+                                                        n_speech_min=int(k[0] * n_speech),
+                                                        n_speech_max=int(k[1] * n_speech),
+                                                        N_samples=int(n_samples * (k[1] - k[0])))
+        data_test, mask_test = cls.__generate_data_sample(n_music_min=int(n_music * k[1]), n_music_max=n_music,
+                                                          n_speech_min=int(k[1] * n_speech), n_speech_max=n_speech,
+                                                          N_samples=int(n_samples * (k[2] - k[1])))
+        result = {'train': (data_train,mask_train),
+                    'val': (data_val, mask_val),
+                    'test': (data_test, mask_test)}
+        return result
 
     @classmethod
-    def generate_live_sample(cls, path):
+    def __get_generated_live_samples(cls, path, k):
+        """ Get embedding and mask of live data (Youtube video, film etc)
+                   :param path: pkl file containing information about masks and embeddings of samples from live set;
+                   :param k: coefficients for the capacities of sets (train:val:test);
+                   :return: result: a dictionary containing train, validation and test live samples
+               """
+
+        # prepare data to generate samples if necessary
+        if cls.__mask_live is None:
+            cls.__generate_live_sample(path)
+        # generate samples
+        n = len(cls.__data_live)
+        data_train, mask_train = cls.__data_live[0: int(k[0] * n)], cls.__mask_live[0: int(k[0] * n)]
+        data_val, mask_val = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
+        data_test, mask_test = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
+        result = {'train': (data_train, mask_train),
+                  'val': (data_val, mask_val),
+                  'test': (data_test, mask_test)}
+        return result
+
+    @classmethod
+    def __generate_audioset_sample(cls, n_samples):
+        """Generate n samples using AudioSet
+        :param n_samples: the number of samples to generate;
+        :return: void
+        """
+        # extract info from audio set
+        assert os.path.isfile(cls.__path_to_audioset_data), "File {} not found".format(cls.__path_to_audioset_data)
+        assert os.path.isfile(cls.__path_to_labels), "File {} not found".format(cls.__path_to_labels)
+        cls.__music_data, cls.__speech_data = cls.__extract_info_audioset(cls.__path_to_audioset_data, cls.__path_to_labels)
+
+        # extract info about music with genres classification
+        assert os.path.isfile(cls.__path_to_genres), "File {} not found".format(cls.__path_to_genres)
+        music_data_new_res = cls.__extract_music_for_genres(cls.__path_to_genres)
+        # add data to sample
+        cls.__music_data = np.vstack([cls.__music_data, music_data_new_res])
+
+    @classmethod
+    def __generate_live_sample(cls, path):
         """Generate samples from YouTube video, films etc
                 :param path: pkl file containing information about masks and embeddings of samples from live set
                 :return: void
         """
-
         # read data
+        assert os.path.isfile(path), "File {} not found".format(path)
         with open(path, "rb") as handle:
             data_dict = pickle.load(handle)
         live_embed = cls.__uint8_to_float32([data_dict['embeddings_list']][0])
         mask_list = cls.__bool_to_float32([data_dict['mask_list']][0])
 
         # shuffle embeddings and masks in the same order
-        order = np.random.permutation(mask_list.shape[0])
-        cls.data_live = cls.__shuffle(live_embed, order)
-        cls.mask_live = cls.__shuffle(mask_list, order)
+        cls.__data_live, cls.__mask_live = cls.__shuffle(live_embed, mask_list)
         # np.zeros((N_samples, seq_len, 1), dtype=np.float32)
-        sh = cls.mask_live.shape
-        cls.mask_live = cls.mask_live.reshape(sh[0], sh[1], 1)
+        sh = cls.__mask_live.shape
+        cls.__mask_live = cls.__mask_live.reshape(sh[0], sh[1], 1)
 
 
     @staticmethod
@@ -130,13 +176,14 @@ class DataGenerator:
             new_arr2[order[i]] = arr2[i]
         return new_arr1, new_arr2
 
-    @staticmethod
-    def __generate_data_sample(music_data, speech_data,
-                             n_samples=10000, seq_len=100):
+    @classmethod
+    def __generate_data_sample(cls, n_music_min,n_music_max, n_speech_min, n_speech_max,
+                             N_samples=10000, seq_len=100):
         """Generate random samples by mixing music and speech
-            :param music_data: complete numpy array of shape (len, dur, emb), where len is the number of music pieces
-            with the duration of dur seconds each with emb-dimensional vector of embeddings
-            :param speech_data: the same as music_data but sound pieces correspond "is_speaking" class
+            :param n_music_min: index of the first sound piece to be used (in music class)
+            :param n_music_max: index of the last sound piece to be used (in music class)
+            :param n_speech_min: index of the first sound piece to be used (in speech class)
+            :param n_speech_max: index of the last sound piece to be used (in speech class)
             :param n_samples: the number of samples to generate
             :param seq_len: sequence length in seconds, the max length of music part in a single sample
             :return (data_sample, mask_sample) where
@@ -144,15 +191,13 @@ class DataGenerator:
                 mask_sample: numpy tensor with masks of the samples with ones in place of music part
         """
         number_tracks = int(round(seq_len) / 10)
-        data_sample = np.zeros((n_samples, seq_len, param.EMBEDDING_SIZE), dtype=np.float32)
-        mask_sample = np.zeros((n_samples, seq_len, 1), dtype=np.float32)
-        for i in tqdm(range(n_samples)):
-
-            # generate audio features
+        data_sample = np.zeros((N_samples, seq_len, param.EMBEDDING_SIZE), dtype=np.float32)
+        mask_sample = np.zeros((N_samples, seq_len, 1), dtype=np.float32)
+        for i in tqdm(range(N_samples)):
+            # generat audio features
             for k in range(number_tracks):
-                rand_idx = np.random.randint(0, len(speech_data))
-                data_sample[i, 10 * k:10 * (k + 1), :] = speech_data[rand_idx, :, :]
-
+                rand_idx = np.random.randint(n_speech_min, n_speech_max)
+                data_sample[i, 10 * k:10 * (k + 1), :] = cls.__speech_data[rand_idx, :, :]
             # randomly select position for music part
             start = np.random.randint(int(-0.2 * seq_len), int(1.2 * seq_len))
             duration = np.random.randint(seq_len)
@@ -167,13 +212,15 @@ class DataGenerator:
                 mask_sample[i, start:finish, 0] = 1.0
                 curr_music_len = finish - start
                 while curr_music_len > 10:
-                    rand_idx = np.random.randint(0, len(music_data))
-                    data_sample[i, start:start + 10, :] = music_data[rand_idx, :, :]
+                    rand_idx = np.random.randint(n_music_min, n_music_max)
+                    data_sample[i, start:start + 10, :] = cls.__music_data[rand_idx, :, :]
                     start += 10
                     curr_music_len = finish - start
-                rand_idx = np.random.randint(0, len(music_data))
-                data_sample[i, start:finish, :] = music_data[rand_idx, :curr_music_len, :]
+                rand_idx = np.random.randint(n_music_min, n_music_max)
+                data_sample[i, start:finish, :] = cls.__music_data[rand_idx, :curr_music_len, :]
         return data_sample, mask_sample
+
+
 
     @classmethod
     def __extract_music_for_genres(cls, path_to_genres):
@@ -183,9 +230,8 @@ class DataGenerator:
         """
         with open(path_to_genres, "rb") as handle:
             data_dict_music = pickle.load(handle)
-
         # data_dict_music has struct {'category_dict', 'embedings_list', 'label_list'}
-        embeddings_list = data_dict_music["embeddings_list"]
+        embeddings_list = data_dict_music["embedings_list"]
 
         # define some params
         seq_length = embeddings_list[0].shape[0]
@@ -267,4 +313,31 @@ class DataGenerator:
         return np.float32(y)
 
 if __name__ == "__main__":
-    pass
+    # DataGenerator.get_generated_sample(KindOfData.AUDIOSET, [5,3,1], 1000)
+    # args of cmd
+    parser = argparse.ArgumentParser(description='Preprocessing')
+
+    parser.add_argument('-t', type=str, action="store", dest="type", help='type of set to det. as - audioset, ls - live set, all - both')
+    parser.add_argument('-ptdl', type=str, action="store", dest="ptdl", help='path to data about live sample')
+    parser.add_argument('-pts', type=str, action="store", dest="pts", help='path to folder to save test, val and train samples')
+    parser.add_argument('-r', type=str, action="store", dest="relation", help='relation for the capacities of sets (test:vel:train)')
+    parser.add_argument('-n', type=int, action="store", dest="n_samples", help='amount of samples to generate')
+
+    args = parser.parse_args()
+    #generat samples depending on the type parameter
+    if args.type == "as":
+        type = KindOfData.AUDIOSET
+    elif args.type == "ls":
+        type = KindOfData.LIVE
+    elif args.type == "all":
+        type = KindOfData.ALL
+    else:
+        print("Unknown type: -t ")
+    #parse relation
+    r = list(map(int, args.relation.split(',')))
+    s = sum(r)
+    k = [r[0] / s]
+    k.append(k[0] + r[1] / s)
+    k.append(k[1] + r[2] / s)
+    #generate data
+    DataGenerator.get_generated_sample(type, r, args.n_samples, args.pts)
