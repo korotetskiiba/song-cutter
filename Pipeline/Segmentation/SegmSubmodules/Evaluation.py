@@ -29,26 +29,26 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_dict=No
         ground_truth: the ground truth binary mask vector
         json_file: path to json file to save metrics
         metrics_dict: dictionary with custom metrics names as keys and metrics functions as values,
-        metric function has 2 arguments: prediction and ground_truth"""
+        metric function has 2 arguments: ground_truth and prediction"""
     with open(json_file, 'w') as f:
         json_dict = {}  # init dictionary to save
 
-        corr = np.corrcoef(prediction, ground_truth)[1, 0]  # get Pearson's correlation coefficient
+        corr = np.corrcoef(ground_truth, prediction)[1, 0]  # get Pearson's correlation coefficient
         json_dict["corr"] = corr
 
-        f1 = f1_score(prediction, ground_truth)
+        f1 = f1_score(ground_truth, prediction)
         json_dict["f1"] = float(f1)
 
-        log_loss_val = log_loss(prediction, ground_truth)
+        log_loss_val = log_loss(ground_truth, prediction)
         json_dict["log_loss"] = float(log_loss_val)
 
-        roc_auc = roc_auc_score(prediction, ground_truth)
+        roc_auc = roc_auc_score(ground_truth, prediction)
         json_dict["roc_auc"] = float(roc_auc)
 
-        precision = precision_score(prediction, ground_truth)
+        precision = precision_score(ground_truth, prediction)
         json_dict["precision"] = float(precision)
 
-        recall = recall_score(prediction, ground_truth)
+        recall = recall_score(ground_truth, prediction)
         json_dict["recall"] = float(recall)
 
         iou = __intersection_over_union(ground_truth, prediction)
@@ -56,7 +56,7 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_dict=No
 
         if metrics_dict is not None:  # add custom metrics
             for metric_name in metrics_dict.keys():
-                metric_val = metrics_dict[metric_name](prediction, ground_truth)
+                metric_val = metrics_dict[metric_name](ground_truth, prediction)
                 json_dict[metric_name] = float(metric_val)
 
         json.dump(json_dict, f)  # save dictionary
