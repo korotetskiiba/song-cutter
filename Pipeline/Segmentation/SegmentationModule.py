@@ -7,7 +7,7 @@ import sys
 from pathlib import Path
 
 import SegmSubmodules.Models as Models
-import SegmSubmodules.Evalutation as Eval
+import SegmSubmodules.Evaluation as Eval
 import SegmSubmodules.PredictionCutter as Cutter
 
 
