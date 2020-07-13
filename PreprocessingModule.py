@@ -87,7 +87,7 @@ class PreprocessingModule:
         Extracts YouTube link if given in the 1st line of the meta-info file.
 
         :param path_to_meta: path to meta-info about the audio;
-        :return: binary mask generated based on given meta.
+        :return: binary mask generated based on given meta and link to YouTube src if given.
         """
         assert os.path.isfile(path_to_meta), "Meta-info file {} not found".format(path_to_meta)
 
@@ -141,13 +141,24 @@ class PreprocessingModule:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Preprocessing')
+    parser = argparse.ArgumentParser(description='Preprocessing', add_help=False)
 
-    parser.add_argument('-i', action="store", dest="mode")
-    parser.add_argument('-v', action="store", dest="path_to_video")
-    parser.add_argument('-a', action="store", dest="path_to_audio")
-    parser.add_argument('-m', action="store", dest="path_to_meta")
-    parser.add_argument('-s', action="store", dest="seq_len")
+    parser.add_argument('-i', action="store", dest="mode", help="mode=train if module is part of train-pipeline."
+                                                                "mode=predict if module is part of inference-pipeline.")
+    parser.add_argument('-v', action="store", dest="path_to_video", help="absolute path to the video-file including "
+                                                                         "its name and format. if the link is given "
+                                                                         "in meta-info file, this would be the path "
+                                                                         "to save the video(if its not yet downloaded "
+                                                                         "to this location).")
+    parser.add_argument('-a', action="store", dest="path_to_audio", help="absolute path to the audio-file including "
+                                                                         "its name and format. this is the where the "
+                                                                         "audio file is saved after being converted.")
+    parser.add_argument('-m', action="store", dest="path_to_meta", help="absolute path to the meta-file including "
+                                                                        "its name and format.")
+    parser.add_argument('-s', action="store", dest="seq_len", help="the length of the training sample in seconds. "
+                                                                   "given video's audiotrack is cut in pieces "
+                                                                   "of this size. default=100")
+    parser.add_argument('-h', '--help', action="help", help="show this help message")
 
     args = parser.parse_args()
     if args.seq_len is None:
@@ -155,5 +166,5 @@ if __name__ == "__main__":
 
     if args.mode == "train":
         PreprocessingModule.preprocess_train(args.path_to_meta, args.path_to_video, args.path_to_audio, args.seq_len)
-    else:
+    if args.mode == "predict":
         PreprocessingModule.convert_to_wav(args.path_to_video, args.path_to_audio)
