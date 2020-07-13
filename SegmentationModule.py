@@ -2,6 +2,7 @@ import numpy as np
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping
 from astropy.convolution import Gaussian1DKernel, convolve
 import datetime
+import os.path
 
 import SegmSubmodules.Models as Models
 import SegmSubmodules.Evalutation as Eval
@@ -35,7 +36,7 @@ class SegmentationModule:
                                                                                       "ends with .h5")
         if self.model is None:  # build default model
             self.__build_new_model()
-        y_tr_crf, y_val_crf = Models.data_to_crf(y_train, y_valid)  # convert to CRF-suitable format
+        y_tr_crf, y_val_crf = Models.convert_to_crf_format(y_train, y_valid)
 
         callback_list = self.__define_callback_list(checkpoint_file)
 
@@ -50,11 +51,13 @@ class SegmentationModule:
         assert isinstance(checkpoint_file, str) and checkpoint_file.endswith('.h5'), "Wrong checkpoint file argument"
         self.model = Models.load_from_cpt(checkpoint_file)
 
-    def predict(self, x_data):
+    def predict(self, x_data, need_smoothing=True):
         """Makes prediction on x_data. Model should be loaded or trained before predict called
 
         Args:
              x_data: tensor of embeddings to make prediction
+
+             need_smoothing: True if it is needed to smooth mask after getting raw prediction mask
 
         Returns:
             the list of time intervals where time interval is a list of the beginning time and the end time,
@@ -62,10 +65,10 @@ class SegmentationModule:
         """
         assert self.model is not None, "Can't predict, model has not been loaded yet"
         assert len(x_data.shape) == 3, "X_data shape must be (samples, duration, embeddings)"
-        # self.model must not be None
         sample_mask = self.__get_raw_prediction(x_data)  # firstly, get raw prediction
-        smooth_mask = self.__get_smooth_mask(sample_mask)  # smooth mask
-        absolute_intervals = self.__get_intervals_by_mask(smooth_mask)  # convert mask to embedding intervals
+        if need_smoothing:
+            sample_mask = self.__get_smooth_mask(sample_mask)  # smooth mask
+        absolute_intervals = self.__get_intervals_by_mask(sample_mask)  # convert mask to embedding intervals
         time_intervals = self.__abs_intervals_to_time(absolute_intervals)  # convert intervals to time intervals
         return time_intervals
 
@@ -88,7 +91,7 @@ class SegmentationModule:
              time and the end time in format 'hh:mm:ss')
         """
         assert isinstance(path_to_wav, str) and path_to_wav.endswith(".wav"), "Wrong path to wav-file"
-        Cutter.cut_file(path_to_wav, target_path, prediction_intervals)
+        Cutter.slice_file(path_to_wav, target_path, prediction_intervals)
 
     @staticmethod
     def cut_video(path_to_video, target_path, prediction_intervals):
@@ -102,7 +105,7 @@ class SegmentationModule:
                      time and the end time in format 'hh:mm:ss')
                 """
         assert isinstance(path_to_video, str) and path_to_video.endswith(".mp4"), "Wrong path to wav-file"
-        Cutter.cut_file(path_to_video, target_path, prediction_intervals, ".mp4")
+        Cutter.slice_file(path_to_video, target_path, prediction_intervals, ".mp4")
 
     def evaluate(self, x_test, y_test, target_path):
         """Evaluate trained or loaded model on test data. Saves plots and metrics to the target_path
@@ -114,9 +117,9 @@ class SegmentationModule:
         """
         assert len(x_test.shape) == 3, "X_test shape must be (samples, duration, embeddings)"
         assert len(y_test.shape) == 1, "Y_test shape must be (duration, )"
-        roc_fname = target_path + "\\roc_curve.png"  # create names for artifacts
-        mask_plot_fname = target_path + "\\masks.png"
-        metrics_fname = target_path + "\\metrics.json"
+        roc_fname = os.path.join(target_path, "roc_curve.png")  # create names for artifacts
+        mask_plot_fname = os.path.join(target_path, "masks.png")
+        metrics_fname = os.path.join(target_path, "metrics.json")
 
         sample_mask = self.__get_raw_prediction(x_test)  # raw prediction
         smooth_mask = self.__get_smooth_mask(sample_mask)  # smooth prediction
@@ -139,17 +142,19 @@ class SegmentationModule:
 
         Returns:
             binary mask vector of predictions"""
-        mask = Models.predict_mask_long_sample(x_data, self.model)
+        mask = Models.predict_whole_track(x_data, self.model)
         # invert mask
         mask = [1 - v for v in mask]
         return mask
 
     @staticmethod
-    def __get_smooth_mask(sample_mask):
+    def __get_smooth_mask(sample_mask, round_border=3):
         """Applies filter to the raw mask to smooth it
 
         Args:
             sample_mask: binary mask vector of predictions
+
+            round_border: if the predicted probability is higher, rounds to 1 (consider it is musical embedding)
 
         Returns:
             smooth mask (binary mask vector)"""
@@ -160,7 +165,6 @@ class SegmentationModule:
         smooth_mask = convolve(sample_mask, g_kernel, boundary='extend')
 
         # to binary mask
-        round_border = 0.3  # if value is higher, it's musical embedding
         smooth_mask = [int(t > round_border) for t in smooth_mask]
         return smooth_mask
 
@@ -177,6 +181,7 @@ class SegmentationModule:
         idxs = np.nonzero(mask)[0]  # get indexes of embeddings with music
 
         max_lag = 4
+        min_music_len = 10
         fragments_list = []
         start_segment = idxs[0]
         finish_segment = idxs[0]
@@ -186,7 +191,7 @@ class SegmentationModule:
                 prev_val = v
                 finish_segment = v
             else:
-                if finish_segment - start_segment > 10:
+                if finish_segment - start_segment > min_music_len:
                     fragments_list.append([start_segment, finish_segment])
                     start_segment = v
                     finish_segment = v
@@ -195,7 +200,7 @@ class SegmentationModule:
                     start_segment = v
                     finish_segment = v
                     prev_val = v
-        if finish_segment - start_segment > 10:
+        if finish_segment - start_segment > min_music_len:
             fragments_list.append([start_segment, finish_segment])
         return fragments_list
 
@@ -217,12 +222,14 @@ class SegmentationModule:
         return intervals
 
     @staticmethod
-    def __define_callback_list(checkpoint_file):
+    def __define_callback_list(checkpoint_file, custom_callback_list=None):
         """Get callbacks list to pass it to the fit. Callbacks include learning rate scheduler, checkpoint and
         early stopping
 
         Args:
             checkpoint_file: path to file where model checkpoint will be saved
+
+            custom_callback_list: custom callbacks to use in model fit. If None, no extra custom callbacks added
 
         Returns:
             the list of callbacks which can be passed to fit as callback parameter instantly"""
@@ -235,4 +242,13 @@ class SegmentationModule:
 
         # define early stopping
         early_stopping_callback = EarlyStopping(monitor='val_loss', patience=3, verbose=1)
-        return [cpt_callback, lr_scheduler_callback, early_stopping_callback]
+
+        result_cb_list = [cpt_callback, lr_scheduler_callback, early_stopping_callback]
+        if custom_callback_list is not None:  # add custom callbacks
+            result_cb_list += custom_callback_list
+
+        return result_cb_list
+
+
+if __name__ == "__main__":
+    print("Hello")

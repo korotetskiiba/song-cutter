@@ -45,7 +45,7 @@ def load_from_cpt(path):
     return model
 
 
-def predict_mask_long_sample(x_data, crf_model):
+def predict_whole_track(x_data, crf_model):
     """Make model prediction on tensor longer than model process with a single iteration. Cut X into equal pieces and
     predict on them
 
@@ -72,7 +72,7 @@ def predict_mask_long_sample(x_data, crf_model):
     return sample_mask
 
 
-def data_to_crf(y_tr, y_val):
+def convert_to_crf_format(y_tr, y_val):
     """Translates label tensors from data generator format to CRF-supportable format
 
     Args:

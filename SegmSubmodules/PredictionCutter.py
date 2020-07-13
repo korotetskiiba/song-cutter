@@ -2,7 +2,7 @@ import datetime
 import subprocess
 
 
-def cut_file(path_to_file, target_path, prediction_intervals, extension=".wav"):
+def slice_file(path_to_file, target_path, prediction_intervals, extension=".wav"):
     """Cut file using ffmpeg into pieces described in the intervals get by prediction. Can be used to cut sound or
     video
 

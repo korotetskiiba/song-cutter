@@ -15,18 +15,24 @@ def draw_mask_plots(prediction, ground_truth, plot_file):
         plot_file: path to file where plot will be saved"""
     # Have to add captions, tags and labels
     plt.figure()
-    plt.plot([x for x in range(len(prediction))], prediction, [x for x in range(len(prediction))], ground_truth)
+    x = [x for x in range(len(prediction))]  # creating net to make plots
+    plt.plot(x, prediction, x, ground_truth)
     plt.savefig(plot_file)
 
 
-def count_metrics_on_sample(prediction, ground_truth, json_file):
+def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_dict=None):
     """Counts metrics for passed prediction and saves it to file in .JSON format. Supported metrics:
     Pearson's correlation coefficient, f1-score, log_loss, roc_auc, precision, recall, intersection over union
 
     Args:
         prediction: the prediction binary mask vector
+
         ground_truth: the ground truth binary mask vector
-        json_file: path to json file to save metrics"""
+
+        json_file: path to json file to save metrics
+
+        metrics_dict: dictionary with custom metrics names as keys and metrics functions as values,
+        metric function has 2 arguments: prediction and ground_truth"""
     with open(json_file, 'w') as f:
         json_dict = {}  # init dictionary to save
 
@@ -50,6 +56,11 @@ def count_metrics_on_sample(prediction, ground_truth, json_file):
 
         iou = __intersection_over_union(ground_truth, prediction)
         json_dict["IoU"] = float(iou)
+
+        if metrics_dict is not None:  # add custom metrics
+            for metric_name in metrics_dict.keys():
+                metric_val = metrics_dict[metric_name](prediction, ground_truth)
+                json_dict[metric_name] = float(metric_val)
 
         json.dump(json_dict, f)  # save dictionary
 
@@ -112,12 +123,12 @@ class GroundTruthHardcoder:
             the ground truth mask for Epica video"""
         ratio = 100 / 96  # as 100 VGG embeddings are 96 seconds
         q_len = 1112  # length of the sample
-        true_value = np.zeros(q_len, dtype=np.float32)
-        true_value[int(11 * ratio):int(248 * ratio) + 1] = 1.0
-        true_value[int(300 * ratio):int(524 * ratio) + 1] = 1.0
-        true_value[int(587 * ratio):int(798 * ratio) + 1] = 1.0
-        true_value[int(832 * ratio):int((17 * 60 + 25) * ratio) + 1] = 1.0
-        return true_value
+        ground_truth_mask = np.zeros(q_len, dtype=np.float32)
+        ground_truth_mask[int(11 * ratio):int(248 * ratio) + 1] = 1.0
+        ground_truth_mask[int(300 * ratio):int(524 * ratio) + 1] = 1.0
+        ground_truth_mask[int(587 * ratio):int(798 * ratio) + 1] = 1.0
+        ground_truth_mask[int(832 * ratio):int((17 * 60 + 25) * ratio) + 1] = 1.0
+        return ground_truth_mask
 
     @staticmethod
     def get_voice_india():
@@ -127,18 +138,18 @@ class GroundTruthHardcoder:
             the ground truth mask for Voice India video"""
         ratio = 100 / 96  # as 100 VGG embeddings are 96 seconds
         q_len = 833  # length of the sample
-        true_value = np.zeros(q_len, dtype=np.float32)
-        true_value[int(50 * ratio):int(61 * ratio) + 1] = 1.0
-        true_value[int(103 * ratio):int(110 * ratio) + 1] = 1.0
-        true_value[int(195 * ratio):int(222 * ratio) + 1] = 1.0
-        true_value[int(195 * ratio):int(222 * ratio) + 1] = 1.0
-        true_value[int(264 * ratio):int(281 * ratio) + 1] = 1.0
-        true_value[int(296 * ratio):int(302 * ratio) + 1] = 1.0
-        true_value[int(312 * ratio):int(343 * ratio) + 1] = 1.0
-        true_value[int(312 * ratio):int(343 * ratio) + 1] = 1.0
-        true_value[int(374 * ratio):int(419 * ratio) + 1] = 1.0
-        true_value[int(471 * ratio):int(495 * ratio) + 1] = 1.0
-        true_value[int(639 * ratio):int(651 * ratio) + 1] = 1.0
-        true_value[int(653 * ratio):int(709 * ratio) + 1] = 1.0
-        true_value[int(711 * ratio):int(778 * ratio) + 1] = 1.0
-        true_value[int(783 * ratio):] = 1.0
+        ground_truth_mask = np.zeros(q_len, dtype=np.float32)
+        ground_truth_mask[int(50 * ratio):int(61 * ratio) + 1] = 1.0
+        ground_truth_mask[int(103 * ratio):int(110 * ratio) + 1] = 1.0
+        ground_truth_mask[int(195 * ratio):int(222 * ratio) + 1] = 1.0
+        ground_truth_mask[int(195 * ratio):int(222 * ratio) + 1] = 1.0
+        ground_truth_mask[int(264 * ratio):int(281 * ratio) + 1] = 1.0
+        ground_truth_mask[int(296 * ratio):int(302 * ratio) + 1] = 1.0
+        ground_truth_mask[int(312 * ratio):int(343 * ratio) + 1] = 1.0
+        ground_truth_mask[int(312 * ratio):int(343 * ratio) + 1] = 1.0
+        ground_truth_mask[int(374 * ratio):int(419 * ratio) + 1] = 1.0
+        ground_truth_mask[int(471 * ratio):int(495 * ratio) + 1] = 1.0
+        ground_truth_mask[int(639 * ratio):int(651 * ratio) + 1] = 1.0
+        ground_truth_mask[int(653 * ratio):int(709 * ratio) + 1] = 1.0
+        ground_truth_mask[int(711 * ratio):int(778 * ratio) + 1] = 1.0
+        ground_truth_mask[int(783 * ratio):] = 1.0
