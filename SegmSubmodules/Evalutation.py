@@ -26,11 +26,8 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_dict=No
 
     Args:
         prediction: the prediction binary mask vector
-
         ground_truth: the ground truth binary mask vector
-
         json_file: path to json file to save metrics
-
         metrics_dict: dictionary with custom metrics names as keys and metrics functions as values,
         metric function has 2 arguments: prediction and ground_truth"""
     with open(json_file, 'w') as f:
@@ -101,7 +98,6 @@ def __intersection_over_union(true, pred):
 
     Args:
         true: ground truth numpy tensor (binary mask)
-
         pred: prediction numpy tensor (binary mask)
 
     Returns:

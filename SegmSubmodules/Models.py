@@ -51,7 +51,6 @@ def predict_whole_track(x_data, crf_model):
 
     Args:
         x_data: tensor of embeddings to make prediction
-
         crf_model: keras model with crf as the last layer
 
     Returns:
@@ -77,7 +76,6 @@ def convert_to_crf_format(y_tr, y_val):
 
     Args:
         y_tr: train labels
-
         y_val: validation labels
 
     Returns:

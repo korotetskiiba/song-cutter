@@ -4,6 +4,7 @@ from astropy.convolution import Gaussian1DKernel, convolve
 import datetime
 import os.path
 import sys
+from pathlib import Path
 
 import SegmSubmodules.Models as Models
 import SegmSubmodules.Evalutation as Eval
@@ -57,7 +58,6 @@ class SegmentationModule:
 
         Args:
              x_data: tensor of embeddings to make prediction
-
              need_smoothing: True if it is needed to smooth mask after getting raw prediction mask
 
         Returns:
@@ -81,32 +81,20 @@ class SegmentationModule:
         return self.model
 
     @staticmethod
-    def cut_wav(path_to_wav, target_path, prediction_intervals):
-        """Cut wav file according to time intervals given by prediction. Pieces of sound file will be saved as
-        target_path + '_piece_' + piece_number + '.wav'
-
-        Args:
-             path_to_wav: path to .wav sound file to be cut
-             target_path: path to directory where pieces of sound file will be saved
-             prediction_intervals: the list of intervals where interval is the list of strings (the beginning
-             time and the end time in format 'hh:mm:ss')
-        """
-        assert isinstance(path_to_wav, str) and path_to_wav.endswith(".wav"), "Wrong path to wav-file"
-        Cutter.slice_file(path_to_wav, target_path, prediction_intervals)
-
-    @staticmethod
-    def cut_video(path_to_video, target_path, prediction_intervals):
-        """Cut video file according to time intervals given by prediction. Pieces of video file will be saved as
-                target_path + '_piece_' + piece_number + '.mp4'
+    def cut_file(path_to_file, target_path, prediction_intervals):
+        """Cut file according to time intervals given by prediction. Pieces of sound file will be saved as
+                target_path + '_piece_' + piece_number + extension
 
                 Args:
-                     path_to_video: path to .mp4 video file to be cut
-                     target_path: path to directory where pieces of video file will be saved
+                     path_to_file: path to .wav or .mp4 file to be cut (sound or video)
+                     target_path: path to directory where pieces of sound file will be saved
                      prediction_intervals: the list of intervals where interval is the list of strings (the beginning
                      time and the end time in format 'hh:mm:ss')
                 """
-        assert isinstance(path_to_video, str) and path_to_video.endswith(".mp4"), "Wrong path to wav-file"
-        Cutter.slice_file(path_to_video, target_path, prediction_intervals, ".mp4")
+        assert isinstance(path_to_file, str) and (path_to_file.endswith(".wav") or path_to_file.endswith(".mp4")), (
+            "Wrong path to file")
+        extension = Path(path_to_file).suffix  # get target file extension
+        Cutter.slice_file(path_to_file, target_path, prediction_intervals, extension=extension)
 
     def evaluate(self, x_test, y_test, target_path):
         """Evaluate trained or loaded model on test data. Saves plots and metrics to the target_path
@@ -154,7 +142,6 @@ class SegmentationModule:
 
         Args:
             sample_mask: binary mask vector of predictions
-
             round_border: if the predicted probability is higher, rounds to 1 (consider it is musical embedding)
 
         Returns:
@@ -229,7 +216,6 @@ class SegmentationModule:
 
         Args:
             checkpoint_file: path to file where model checkpoint will be saved
-
             custom_callback_list: custom callbacks to use in model fit. If None, no extra custom callbacks added
 
         Returns:

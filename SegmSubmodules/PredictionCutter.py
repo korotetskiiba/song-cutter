@@ -8,12 +8,9 @@ def slice_file(path_to_file, target_path, prediction_intervals, extension=".wav"
 
     Args:
         path_to_file: path to file to be cut
-
         target_path: directory with name prefix where file pieces will be saved
-
         prediction_intervals: the list of intervals where interval is the list of the beginning and the end time
         stored as string in format 'hh:mm:ss'
-
         extension: target extension (e. g., ".wav" for sound)"""
     i = 1  # counter for video piece
     for interval in prediction_intervals:
