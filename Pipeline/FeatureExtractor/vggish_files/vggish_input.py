@@ -19,7 +19,7 @@ import numpy as np
 import resampy
 from scipy.io import wavfile
 
-from vggish_files import mel_features, vggish_params
+from Pipeline.FeatureExtractor.vggish_files import mel_features, vggish_params
 
 
 def waveform_to_examples(data, sample_rate):

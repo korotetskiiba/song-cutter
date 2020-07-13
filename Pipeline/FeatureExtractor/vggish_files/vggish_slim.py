@@ -31,7 +31,7 @@ https://github.com/tensorflow/models/blob/master/research/slim/nets/vgg.py
 """
 
 import tensorflow as tf
-from vggish_files import vggish_params as params
+from Pipeline.FeatureExtractor.vggish_files import vggish_params as params
 
 import tf_slim as slim
 

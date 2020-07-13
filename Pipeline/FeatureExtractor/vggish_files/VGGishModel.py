@@ -1,4 +1,4 @@
-from vggish_files import vggish_postprocess, vggish_slim, vggish_input, vggish_params
+from Pipeline.FeatureExtractor.vggish_files import vggish_postprocess, vggish_params, vggish_input, vggish_slim
 import tensorflow as tf
 
 

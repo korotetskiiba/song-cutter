@@ -1,5 +1,5 @@
 import pickle
-from vggish_files import VGGishModel
+from Pipeline.FeatureExtractor.vggish_files import VGGishModel
 
 
 class FeatureExtraction:
@@ -13,10 +13,13 @@ class FeatureExtraction:
         with open(path_to_pkl, "rb") as handle:
             data_dict_music = pickle.load(handle)
 
+        #reading a list of files
         file_list = data_dict_music.get("files_list")
         assert file_list is not None, "files list not found in "+path_to_pkl
 
+        #model definition
         model = VGGishModel.VGGishModel()
+
         data_dict_music["embeddings_list"] = model.get_embeddings_list(file_list)
 
         with open(path_to_save_pkl, "wb") as handle:
