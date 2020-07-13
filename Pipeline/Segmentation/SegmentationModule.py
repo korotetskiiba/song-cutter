@@ -137,7 +137,7 @@ class SegmentationModule:
         return mask
 
     @staticmethod
-    def __get_smooth_mask(sample_mask, round_border=3):
+    def __get_smooth_mask(sample_mask, round_border=0.3):
         """Applies filter to the raw mask to smooth it
 
         Args:
