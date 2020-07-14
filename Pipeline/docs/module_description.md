@@ -234,3 +234,34 @@ save_file = "evaluate_1"
 
 segm_module.evaluate(x_sample, ground_truth, save_file)
 ```
+
+#### CLI
+This module can be called through CLI, see options at -h(--help).
+Optional arguments:
+  * -i PATH_TO_PKL
+  	- file with numpy tensors packed the same as DataGenerator-output.
+  * -c CHECKPOINT_FILE
+  	- file with *.h5 extension where segmentation model will be saved or from where model will be loaded.
+  * -o PATH_TO_FILE
+  	- path to the file (video or sound) to be cut into slices with music.
+  * -t TARGET_PATH
+  	- path where all artifacts will be saved (metrics or slices).
+  * -f FUNC
+  	- scenario of module work. 
+		Values:
+		- fit: launches fit
+		- load_predict: load model from checkpoint and make prediction
+		- load_evaluate: load model from checkpoint and evaluate it
+		- load_cut: load model from checkpoint and slice video
+
+#### CLI example:
+
+To run as part of train-pipeline, to run fit:
+```
+python SegmentationModule.py -i path_to_pkl -c path_to_checkpoint -t path_to_eval_summary -f fit
+```
+
+To run as part of inference-pipeline, to cut video into music slices:
+```
+python SegmentationModule.py -i path_to_pkl -c path_to_checkpoint -o path_to_video -t path_to_slices -f load_cut
+```
