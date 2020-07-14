@@ -1,5 +1,6 @@
 import pickle
 from Pipeline.FeatureExtractor.vggish_files import VGGishModel
+import argparse
 
 
 class FeatureExtraction:
@@ -27,6 +28,11 @@ class FeatureExtraction:
 
 
 if __name__ == "__main__":
-    import sys
-    assert len(sys.argv) >= 3, "wrong num of arguments"
-    FeatureExtraction.get_audioset_features(sys.argv[1], sys.argv[2])
+    parser = argparse.ArgumentParser(description='Preprocessing')
+
+    parser.add_argument('-i', type=str, action="store", dest="input", help='path to input file')
+    parser.add_argument('-o', type=str, action="store", dest="output",
+                        help='path to save the output file')
+    args = parser.parse_args()
+
+    FeatureExtraction.get_audioset_features(args.input, args.output)
