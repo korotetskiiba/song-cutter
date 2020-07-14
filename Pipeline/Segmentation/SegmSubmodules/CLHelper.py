@@ -24,10 +24,10 @@ def run_from_cmd(segmentation_module):
     parser = argparse.ArgumentParser(description='Segmentation', add_help=False)
 
     parser.add_argument('-i', action="store", dest="path_to_pkl", help="*.pkl file with data tensors")
-    parser.add_argument('c', action="store", dest="checkpoint_file", help="*.h5 file with model checkpoint")
-    parser.add_argument('o', action="store", dest="path_to_file", help="path to video to be cut")
-    parser.add_argument('t', action="store", dest="target_path", help="path to the target directory")
-    parser.add_argument('f', action="store", dest="func", help="function to launch."
+    parser.add_argument('-c', action="store", dest="checkpoint_file", help="*.h5 file with model checkpoint")
+    parser.add_argument('-o', action="store", dest="path_to_file", help="path to video to be cut")
+    parser.add_argument('-t', action="store", dest="target_path", help="path to the target directory")
+    parser.add_argument('-f', action="store", dest="func", help="function to launch."
                                                                "fit - to launch fit."
                                                                "load_predict - to load checkpoint and make prediction."
                                                                "load_evaluate - to load checkpoint and evaluate model."
