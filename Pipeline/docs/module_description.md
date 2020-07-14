@@ -92,6 +92,21 @@ get_embeddings_list(self, files_list)
 To select the desired model you just need to select the desired class. For example:  
 `model = VGGishModel.VGGishModel()`
 
+#### CLI
+This module can be called through CLI.
+Optional arguments:
+  * -i PATH_TO_PKL
+  	- path to input file
+  * -o PATH_TO_SAVE_PKL  
+  	- path to save the output file
+
+#### CLI example:
+
+So, to do the same action via the command prompt you should:
+```
+python FeatureExtraction.py -i path_to_pkl -o path_to_save_pkl
+```
+
 ## DataGenerator
  - input: 
  	- type of generated set
