@@ -13,7 +13,7 @@ This module can be called through CLI, see options at -h(--help).
         for inference-pipeline - wav-audiotrack of the given video.
 #### func:
     convert_to_wav(path_to_video, path_to_audio)
-Converts given video to .wav-audio.
+This method is to be used when predicting (for inference-pipeline). Converts given video to .wav-audio.
 * input: path_to_video - path to the video to be converted to audio,
          path_to_audio - path to where audio is to be placed after conversion.
 * output: wav-audio at path_to_audio.
