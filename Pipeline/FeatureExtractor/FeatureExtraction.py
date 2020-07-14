@@ -30,9 +30,9 @@ class FeatureExtraction:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocessing')
 
-    parser.add_argument('-i', type=str, action="store", dest="input", help='path to input file')
-    parser.add_argument('-o', type=str, action="store", dest="output",
+    parser.add_argument('-i', type=str, action="store", dest="path_to_pkl", help='path to input file')
+    parser.add_argument('-o', type=str, action="store", dest="path_to_save_pkl",
                         help='path to save the output file')
     args = parser.parse_args()
 
-    FeatureExtraction.get_audioset_features(args.input, args.output)
+    FeatureExtraction.get_audioset_features(args.path_to_pkl, args.path_to_save_pkl)
