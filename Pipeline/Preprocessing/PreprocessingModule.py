@@ -53,14 +53,14 @@ class PreprocessingModule:
     def __generate_pkl(paths_to_cuts, bin_mask):
         """
         Generates pickle-file - .pkl file with
-        dict{"files_list": <list of paths to cuts>, "mask": <bin mask for the whole audio>}.
+        dict{"files_list": <list of paths to cuts>, "mask_list": <bin mask for the whole audio>}.
         .pkl file is placed in the same dir as the initial audio and named the same way.
 
         :param paths_to_cuts: list with all paths to cuts, that were generated from audio-file;
         :param bin_mask: binary mask of the whole audio-file;
         :return: void.
         """
-        pkl_dict = {"files_list": paths_to_cuts, "mask": bin_mask}
+        pkl_dict = {"files_list": paths_to_cuts, "mask_list": bin_mask}
         pkl_name = os.path.abspath(paths_to_cuts[0]).replace("1.wav", "") + ".pkl"
         with open(pkl_name, "wb") as pkl:
             pickle.dump(pkl_dict, pkl)
