@@ -7,6 +7,7 @@ Modules:
  - DataGenerator
  - Segmentation
 ## Preprocessing
+This module can be called through CLI, see options at -h(--help).
 * input: meta-info txt-file, video mp4-file (video can also be downloaded from YT if given a link in the 1st line of meta-info file).
 * output: for train-pipeline - .plk file with files-list(path to samples obtained from given video) and mask(binary mask of the whole audio),
         for inference-pipeline - wav-audiotrack of the given video.
