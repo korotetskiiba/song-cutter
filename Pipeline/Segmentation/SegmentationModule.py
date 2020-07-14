@@ -3,12 +3,12 @@ from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStoppin
 from astropy.convolution import Gaussian1DKernel, convolve
 import datetime
 import os.path
-import sys
 from pathlib import Path
 
 import SegmSubmodules.Models as Models
 import SegmSubmodules.Evaluation as Eval
 import SegmSubmodules.PredictionCutter as Cutter
+import SegmSubmodules.CLHelper as CommandLineHelper
 
 
 class SegmentationModule:
@@ -238,8 +238,4 @@ class SegmentationModule:
 
 
 if __name__ == "__main__":
-    checkpoint_file = sys.argv[1]  # checkpoint file passed as the first cmd line argument
-    segm_module = SegmentationModule()  # init module
-    segm_module.load_from_checkpoint(checkpoint_file)  # load model
-    model = segm_module.get_model()  # get model
-    model.summary()  # show the summary of the model
+    CommandLineHelper.run_from_cmd(SegmentationModule())
