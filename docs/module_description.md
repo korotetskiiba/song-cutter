@@ -192,8 +192,8 @@ implemented methods:
 	- `prediction_intervals` - the list of time intervals got from `predict(self, x_data)`
 - `evaluate(self, x_test, y_test, target_path)`: evaluate model (count metrics, draw ROC curve plot, draw plot with the ground truth mask and predicted mask)
 	input:
-	- `x_test` - data tensor of shape `(1, time, embeddings)`
-	- `y_test` - the ground truth tensor of shape `(time, )`
+	- `x_test` - data tensor of shape `(samples, time, embeddings)`
+	- `y_test` - the ground truth tensor of shape `(samples, time, 1)`
 	- `target_path` - directory where plots and metrics will be saved
 
 ### Usage example:
@@ -232,5 +232,5 @@ evaluate: calculate and save metrics, draw plots:
 ```
 save_file = "evaluate_1"
 
-segm_module.evaluate(x_sample, ground_truth, save_file)
+segm_module.evaluate(x_test, y_test, save_file)
 ```

@@ -45,29 +45,32 @@ def load_from_cpt(path):
     return model
 
 
-def predict_whole_track(x_data, crf_model):
-    """Make model prediction on tensor longer than model process with a single iteration. Cut X into equal pieces and
-    predict on them
+def predict_track_pack(x_data, crf_model):
+    """Make model prediction on tensor longer than model process with a single iteration. Cut each sample of X tensor
+     into equal pieces and predict on them
 
-    Args:
-        x_data: tensor of embeddings to make prediction
-        crf_model: keras model with crf as the last layer
+        Args:
+            x_data: tensor of embeddings to make prediction (shape is (samples, duration, embeddings))
+            crf_model: keras model with crf as the last layer
 
-    Returns:
-        prediction for the whole input tensor (binary mask vector)"""
-    single_dim_sample = x_data.shape[1]  # total length
+        Returns:
+            prediction for the whole input tensor (shape is (samples, duration))"""
+    single_dim_sample = x_data.shape[1]  # length of each sample
     tracks = int(single_dim_sample / SEQ_LEN)  # count the number of pieces to predict on
-    sample_mask = np.zeros((single_dim_sample, 1), dtype=np.float32)  # init tensor for the mask
+    sample_mask = np.zeros((x_data.shape[0], single_dim_sample, 1), dtype=np.float32)  # init tensor for the mask
 
-    for i in range(tracks):  # make prediction for each piece
-        q = crf_model.predict(x_data[:, i * SEQ_LEN:(i + 1) * SEQ_LEN, :])
-        q = q[0, :, 0]
-        sample_mask[i * SEQ_LEN:(i + 1) * SEQ_LEN, 0] = q  # add to the sample mask
+    for track_num in range(x_data.shape[0]):
+        for i in range(tracks):  # make prediction for each piece
+            sample = x_data[track_num, i * SEQ_LEN:(i + 1) * SEQ_LEN, :].copy().reshape(1, SEQ_LEN, x_data.shape[2])
+            q = crf_model.predict(sample)
+            q = q[0, :, 0]
+            sample_mask[track_num, i * SEQ_LEN:(i + 1) * SEQ_LEN, 0] = q  # add to the sample mask
+        if tracks * SEQ_LEN > x_data.shape[1]:  # the last piece
+            sample = x_data[track_num, tracks * SEQ_LEN:, :].copy().reshape(1, x_data.shape[1], x_data.shape[2])
+            q = crf_model.predict(sample)  # predict on the last piece
+            sample_mask[track_num, tracks * SEQ_LEN:, 0] = q
 
-    q = crf_model.predict(x_data[:, tracks * SEQ_LEN:, :])  # predict on the last piece
-    q = q[0, :, 0]
-    sample_mask[tracks * SEQ_LEN:, 0] = q
-    sample_mask = sample_mask.reshape(-1)  # reshape mask into binary vector
+    sample_mask = sample_mask.reshape(sample_mask.shape[0], sample_mask.shape[1])  # reshape mask array of tensors
     return sample_mask
 
 
