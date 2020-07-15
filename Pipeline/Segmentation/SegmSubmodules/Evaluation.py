@@ -16,48 +16,34 @@ def draw_mask_plots(prediction, ground_truth, plot_file):
     # Have to add captions, tags and labels
     plt.figure()
     x = [x for x in range(len(prediction))]  # creating net to make plots
-    plt.plot(x, prediction, x, ground_truth)
+    plt.plot(x, prediction, label='prediction')
+    plt.plot(x, ground_truth, label='ground truth')
+    plt.xlabel('Time')
+    plt.ylabel('Song mask')
+    plt.title('Song mask plot')
+    plt.legend(loc="lower right")
     plt.savefig(plot_file)
 
 
-def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_dict=None):
-    """Counts metrics for passed prediction and saves it to file in .JSON format. Supported metrics:
+def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_list=None):
+    """Counts metrics for passed prediction and saves it to file in .JSON format. Default metrics:
     Pearson's correlation coefficient, f1-score, log_loss, roc_auc, precision, recall, intersection over union
 
     Args:
         prediction: the prediction binary mask vector
         ground_truth: the ground truth binary mask vector
         json_file: path to json file to save metrics
-        metrics_dict: dictionary with custom metrics names as keys and metrics functions as values,
-        metric function has 2 arguments: ground_truth and prediction"""
+        metrics_list: list with custom metrics,
+        metric function has 2 arguments: ground_truth and prediction. If None, default metrics used"""
+    if metrics_list is None:  # assign default metrics
+        metrics_list = [f1_score, log_loss, roc_auc_score, precision_score, recall_score, __intersection_over_union,
+                        __corr]
+
     with open(json_file, 'w') as f:
         json_dict = {}  # init dictionary to save
 
-        corr = np.corrcoef(ground_truth, prediction)[1, 0]  # get Pearson's correlation coefficient
-        json_dict["corr"] = corr
-
-        f1 = f1_score(ground_truth, prediction)
-        json_dict["f1"] = float(f1)
-
-        log_loss_val = log_loss(ground_truth, prediction)
-        json_dict["log_loss"] = float(log_loss_val)
-
-        roc_auc = roc_auc_score(ground_truth, prediction)
-        json_dict["roc_auc"] = float(roc_auc)
-
-        precision = precision_score(ground_truth, prediction)
-        json_dict["precision"] = float(precision)
-
-        recall = recall_score(ground_truth, prediction)
-        json_dict["recall"] = float(recall)
-
-        iou = __intersection_over_union(ground_truth, prediction)
-        json_dict["IoU"] = float(iou)
-
-        if metrics_dict is not None:  # add custom metrics
-            for metric_name in metrics_dict.keys():
-                metric_val = metrics_dict[metric_name](ground_truth, prediction)
-                json_dict[metric_name] = float(metric_val)
+        for metric in metrics_list:
+            json_dict[metric.__name__] = float(metric(ground_truth, prediction))
 
         json.dump(json_dict, f)  # save dictionary
 
@@ -91,6 +77,18 @@ def draw_roc(pred_raw, pred_smooth, ground_truth, roc_curve_file):
     plt.title('Receiver operating characteristic example')
     plt.legend(loc="lower right")
     plt.savefig(roc_curve_file)
+
+
+def __corr(true, pred):
+    """Calculate Pearson's correlation coefficient
+
+    Args:
+        true: ground truth numpy tensor (binary mask)
+        pred: prediction numpy tensor (binary mask)
+
+    Returns:
+        scalar (Pearson's correlation coefficient)"""
+    return np.corrcoef(true, pred)[1, 0]
 
 
 def __intersection_over_union(true, pred):
