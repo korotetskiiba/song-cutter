@@ -17,26 +17,26 @@ Modules:
 ```
 convert_to_wav(path_to_video, path_to_audio)
 ```
-Converts given video to .wav-audio.
+Converts given video(s) to .wav-audio(s).
 * input:
-	 - `path_to_video` - path to the video to be converted to audio
-	 - `path_to_audio` - path to where audio is to be placed after conversion
+	 - `path_to_video` - path to the video to be converted to audio (or path to dir with videos)
+	 - `path_to_audio` - path to where audio(s) is to be placed after conversion (or path to dir to place audios)
 * output:
-	- wav-audio at path_to_audio.
+	- wav-audio(s) at path_to_audio.
 ```
 preprocess_train(path_to_meta, path_to_video, path_to_audio, seq_len=100)
 ```
 This method is to be used when training the model.
-Takes the video either from the given location or downloads using the link, converts it to audio,
-cuts audio in pieces, translates the segments-info into a binary mask. Creates a pkl file with paths
-to all audio-cuts and the binary-mask.
+Takes the video(s) either from the given location or downloads using the link, converts to audio(s),
+cuts audio(s) in pieces, translates the segments-info into binary masks (each cut has its own mask).
+Creates a pkl file with paths to all audio-cuts and binary-masks of all cuts.
 * input: 
-	 - `path_to_meta` - path to meta-info about the audio(video)
-	 - `path_to_video` - path to the existing video to be converted to training data (if it doesn't exist, it can be downloaded from YouTube using the link given in 1st line of meta-info file)
-	 - `path_to_audio` - path to where audio is to be placed after conversion
+	 - `path_to_meta` - path to meta-info about the audio(video) (or path to dir with meta-info files)
+	 - `path_to_video` - path to the existing video to be converted to training data (if it doesn't exist, it can be downloaded from YouTube using the link given in 1st line of meta-info file)(can be a path to dir)
+	 - `path_to_audio` - path to where audio is to be placed after conversion(can be a path to dir)
 	 - `seq_len` - the length of sample in seconds to which the audio is cut
 * output:
-	- `pickle-file` - .pkl file with dict{"files_list": <list of paths to cuts>, "mask_list": <bin mask for the whole audio>}. .pkl file is placed in the same dir as the initial audio and named the same way
+	- `pickle-file` - .pkl file with dict{"files_list": <list of paths to cuts>, "mask_list": <binary-masks of all cuts>}. .pkl file is placed in the same dir as the initial audio and "pickle_samples.pkl"
 
 #### CLI
 This module can be called through CLI, see options at -h(--help).
@@ -44,11 +44,11 @@ Optional arguments:
   * -i MODE
   	- mode=train if module is part of train-pipeline. mode=predict if module is part of inference-pipeline.
   * -v PATH_TO_VIDEO  
-  	- absolute path to the video-file including its name and format. if the link is given in meta-info file, this would be the path to save the video(if its not yet downloaded to this location).
+  	-absolute path to the video-file including its name and format (or abs.path to dir with videos). if the link is given in meta-info file, this would be the path to save the video (if its not yet downloaded to this location). if dir is given, each video is named the same as the corresponding meta.
   * -a PATH_TO_AUDIO  
-  	- absolute path to the audio-file including its name and format. this is the where the audio file is saved after being converted.
+  	- absolute path to the audio-file including its name and format (or abs.path to dir with audios). this is the where the audio file is saved after being converted. if dir is given, each audio is named the same as the corresponding meta.
   * -m PATH_TO_META   
-  	- absolute path to the meta-file including its name and format.
+  	- absolute path to the meta-file including its name and format (or abs.path to dir with meta-info files).
   * -s SEQ_LEN        
   	- the length of the training sample in seconds. given video's audiotrack is cut in pieces of this size. default=100
   * -h, --help        
