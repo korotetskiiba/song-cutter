@@ -130,3 +130,5 @@ dmypy.json
 
 # Not needed binaries
 .idea/
+
+Pipeline/FeatureExtractor/vggish_files/vggish_model.ckpt

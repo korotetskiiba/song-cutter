@@ -16,7 +16,8 @@ class PreprocessingModule:
         :param path_to_audio: path to where audio is to be placed after conversion;
         :return: void
         """
-
+        if os.path.isfile(path_to_audio):
+            return
         with VideoFileClip(path_to_video) as videoclip:
             audioclip = videoclip.audio
             audioclip.write_audiofile(path_to_audio, logger=None)
@@ -29,6 +30,8 @@ class PreprocessingModule:
         :param path_to_audio_dir: path to dir where audios are to be placed after conversion;
         :return: void
         """
+        if not os.path.isdir(path_to_audio_dir):
+            os.mkdir(path_to_audio_dir)
         video_paths = PreprocessingModule.__find_format(path_to_video_dir, ".mp4")
         for path_to_video in video_paths:
             name = str(os.path.basename(path_to_video).split(".")[0])
@@ -39,8 +42,9 @@ class PreprocessingModule:
     def convert_to_wav(path_to_video, path_to_audio):
         """
         Converts given video or dir with videos to .wav-audio(s).
-        :param path_to_video: path to the video to be converted to audio (or path to dir with videos);
-        :param path_to_audio: path to where audio is to be placed after conversion (or path to dir) ;
+
+        :param path_to_video: path to the video(s) to be converted to audio(s) (or path to dir with videos);
+        :param path_to_audio: path to where audio(s) is(are) to be placed after conversion (or path to dir) ;
         :return: void
         """
         if os.path.isdir(path_to_video) and os.path.isdir(path_to_audio):
@@ -59,7 +63,7 @@ class PreprocessingModule:
         :param seq_len: length of a desired cut;
         :return: list of all paths to cuts, array of masks corresponding to those cuts.
         """
-        assert os.path.isfile(path_to_audio), "Audio file {} not found".format(path_to_audio)
+        assert os.path.isfile(path_to_audio), "Audio file not found"
 
         audiofile_name = str(os.path.basename(path_to_audio).split(".")[0])
         path_to_cuts = os.path.dirname(path_to_audio)
@@ -91,7 +95,7 @@ class PreprocessingModule:
         :return: void.
         """
         pkl_dict = {"files_list": paths_to_cuts, "mask_list": mask_list}
-        pkl_path = os.path.join(os.path.dirname(paths_to_cuts[0]), "pickle_of_this_folder.pkl")
+        pkl_path = os.path.join(os.path.dirname(paths_to_cuts[0]), "pickle_samples.pkl")
         with open(pkl_path, "wb") as pkl:
             pickle.dump(pkl_dict, pkl)
 
@@ -133,7 +137,7 @@ class PreprocessingModule:
                 end_sec = PreprocessingModule.__to_secs(end)
                 duration = (end_sec - start_sec)
                 for _ in range(duration):
-                    bin_mask.append(1 if label == "song\n" else 0)
+                    bin_mask.append(1 if (label == "song\n" or label == "song") else 0)
         assert len(bin_mask) == end_sec, "Mask is not correct!"
         return link, bin_mask
 
@@ -179,7 +183,8 @@ class PreprocessingModule:
         Takes the videos either from the given location or downloads using the link, converts them to audios,
         cuts audios in pieces, translates the segments-info into binary masks. Creates a pkl file with paths
         to all audio-cuts and the binary-masks of all cuts of all videos.
-        .pkl file is placed in the same dir as the initial audios and named "pickle_of_this_folder".
+        .pkl file is placed in the same dir as the initial audios and named "pickle_samples".
+
         :param path_to_meta_dir: path to dir with meta-info files about the audios(videos);
         :param path_to_video_dir: path to dir with videos to be converted to training data
                               (if the video in the folder doesn't exist, it can be downloaded
@@ -188,6 +193,10 @@ class PreprocessingModule:
         :param seq_len: the length of sample in seconds to which the audios are cut;
         :return: void.
         """
+        if not os.path.isdir(path_to_video_dir):
+            os.mkdir(path_to_video_dir)
+        if not os.path.isdir(path_to_audio_dir):
+            os.mkdir(path_to_audio_dir)
         #  collect paths to all meta-info files in dir
         meta_paths = PreprocessingModule.__find_format(path_to_meta_dir, ".txt")
         files = []
@@ -212,9 +221,10 @@ class PreprocessingModule:
         """
         This method is to be used when training the model.
         Takes the video(s) either from the given location or downloads using the link, converts it(them) to audio(s),
-        cuts audio(s) in pieces, translates the segments-info into a binary masks. Creates a pkl file with paths
+        cuts audio(s) in pieces, translates the segments-info into binary masks. Creates a pkl file with paths
         to all audio-cuts and the binary-masks.
-        .pkl file is placed in the same dir as the initial audios and named "pickle_of_this_folder".
+        .pkl file is placed in the same dir as the initial audios and named "pickle_samples".
+
         :param path_to_meta: path to meta-info about the audio(video) (either a path to file or directory);
         :param path_to_video: path to video(s) to be converted to training data
                               (if video doesn't exist, it can be downloaded from YouTube using the
@@ -223,8 +233,13 @@ class PreprocessingModule:
         :param seq_len: the length of sample in seconds to which the audio is cut;
         :return: void.
         """
-        if os.path.isdir(path_to_meta) and os.path.isdir(path_to_audio) and os.path.isdir(path_to_video):
-            PreprocessingModule.__preprocess_dir(path_to_meta, path_to_video, path_to_audio, seq_len)
+        if os.path.isdir(path_to_meta):
+            PreprocessingModule.__preprocess_dir(
+                path_to_meta,
+                path_to_video,
+                path_to_audio,
+                seq_len
+            )
         else:
             files_list, mask_list = PreprocessingModule.__preprocess_one(
                 path_to_meta,
