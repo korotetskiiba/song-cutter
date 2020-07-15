@@ -5,10 +5,10 @@ import datetime
 import os.path
 from pathlib import Path
 
-import SegmSubmodules.Models as Models
-import SegmSubmodules.Evaluation as Eval
-import SegmSubmodules.PredictionCutter as Cutter
-import SegmSubmodules.CLHelper as CommandLineHelper
+import Pipeline.Segmentation.SegmSubmodules.Models as Models
+import Pipeline.Segmentation.SegmSubmodules.Evaluation as Eval
+import Pipeline.Segmentation.SegmSubmodules.PredictionCutter as Cutter
+import Pipeline.Segmentation.SegmSubmodules.CLHelper as CommandLineHelper
 
 
 class SegmentationModule:

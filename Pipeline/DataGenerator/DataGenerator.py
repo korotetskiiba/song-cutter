@@ -4,7 +4,7 @@ from tqdm import tqdm
 import h5py
 import pickle
 from enum import Enum
-import vggish_params as param
+import Pipeline.FeatureExtractor.vggish_files.vggish_params as param
 import os
 import argparse
 
@@ -22,9 +22,9 @@ class DataGenerator:
     #for audio sets
     __music_data = None
     __speech_data = None
-    __path_to_audioset_data = './meta_files/bal_train.h5'
-    __path_to_labels = './meta_files/class_labels_indices.csv'
-    __path_to_genres = './meta_files/genres_dump.pkl'
+    __path_to_audioset_data = 'DataGenerator/meta_files/bal_train.h5'
+    __path_to_labels = 'DataGenerator./meta_files/class_labels_indices.csv'
+    __path_to_genres = 'DataGenerator./meta_files/genres_dump.pkl'
 
     @classmethod
     def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets'):
@@ -42,8 +42,8 @@ class DataGenerator:
         # prepare coefficients
         s = sum(relation)
         k = [relation[0] / s]
-        k.append(k[0] + relation[1] / s)
-        k.append(k[1] + relation[2] / s)
+        k.append((relation[0] + relation[1]) / s)
+        k.append(1)
 
         # choose mode
         if type is KindOfData.AUDIOSET:
@@ -97,7 +97,7 @@ class DataGenerator:
                                                         N_samples=int(n_samples * (k[1] - k[0])))
         data_test, mask_test = cls.__generate_data_sample(n_music_min=int(n_music * k[1]), n_music_max=n_music,
                                                           n_speech_min=int(k[1] * n_speech), n_speech_max=n_speech,
-                                                          N_samples=int(n_samples * (k[2] - k[1])))
+                                                          N_samples=int(n_samples * (k[2] - k[1]) + 1))
         result = {'train': (data_train,mask_train),
                     'val': (data_val, mask_val),
                     'test': (data_test, mask_test)}
@@ -154,11 +154,45 @@ class DataGenerator:
         live_embed = cls.__uint8_to_float32([data_dict['embeddings_list']][0])
         mask_list = cls.__bool_to_float32([data_dict['mask_list']][0])
 
+        #? why?
+        if live_embed.shape[1] != 100:
+            live_embed = cls.__x_reshape(live_embed)
+
+        mask_list = cls.__mask_scaling(mask_list, 100)
         # shuffle embeddings and masks in the same order
         cls.__data_live, cls.__mask_live = cls.__shuffle(live_embed, mask_list)
         # np.zeros((N_samples, seq_len, 1), dtype=np.float32)
         sh = cls.__mask_live.shape
         cls.__mask_live = cls.__mask_live.reshape(sh[0], sh[1], 1)
+
+    @staticmethod
+    def __x_reshape(live_embed):
+        new_embed = np.zeros([live_embed.shape[0], 100, live_embed.shape[2]], dtype=float)
+        for i in range(len(live_embed)):
+            new_embed[i] = np.append(live_embed[i], [live_embed[i][-1, :]], axis=0)
+        return new_embed
+
+    @staticmethod
+    def __mask_scaling(mask, new_size):
+        new_mask = np.zeros([mask.shape[0], new_size], dtype=np.float32)
+        ratio = new_size/mask.shape[1]
+
+        for i, slice in enumerate(mask):
+            index1 = np.argwhere(slice == 1)
+            if len(index1) == 0:
+                continue
+            index2 = 0
+            new_slice = np.zeros(new_size, dtype=np.float32)
+            while len(np.argwhere(slice[index2:] == 1)) != 0:
+                index1 = index2 + np.argwhere(slice[index2:] == 1)[0][0]
+                if len(np.argwhere(slice[index1:] == 0)) == 0:
+                    new_slice[int(index1 * ratio):] = 1.0
+                    continue
+                index2 = index1 + np.argwhere(slice[index1:] == 0)[0][0]
+                new_slice[int(index1 * ratio):int(index2 * ratio)] = 1.0
+            mask[i] = new_slice
+        return new_mask
+
 
 
     @staticmethod

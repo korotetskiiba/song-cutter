@@ -22,7 +22,6 @@ class FeatureExtraction:
         model = VGGishModel.VGGishModel()
 
         data_dict_music["embeddings_list"] = model.get_embeddings_list(file_list)
-
         with open(path_to_save_pkl, "wb") as handle:
             pickle.dump(data_dict_music, handle)
 
