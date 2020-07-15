@@ -42,8 +42,20 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_list=No
     with open(json_file, 'w') as f:
         json_dict = {}  # init dictionary to save
 
-        for metric in metrics_list:
-            json_dict[metric.__name__] = float(metric(ground_truth, prediction))
+        for metric in metrics_list:  # init
+            json_dict[metric.__name__] = 0
+
+        sample_cnt = prediction.shape[0]
+        divisor = 0  # for normalization
+        for current_num in range(sample_cnt):
+            if K.sum(ground_truth[current_num,:] * prediction[current_num,:]) > 0:  # don't evaluate sample without song
+                divisor += 1
+                for metric in metrics_list:
+                    json_dict[metric.__name__] += float(metric(ground_truth[current_num,:],
+                                                               prediction[current_num,:]))
+
+        for metric in metrics_list:  # normalize
+            json_dict[metric.__name__] /= divisor
 
         json.dump(json_dict, f)  # save dictionary
 
