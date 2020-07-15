@@ -43,8 +43,8 @@ This module can be called through CLI, see options at -h(--help).
 Optional arguments:
   * -i MODE
   	- mode=train if module is part of train-pipeline. mode=predict if module is part of inference-pipeline.
-  * -v PATH_TO_VIDEO  
-  	-absolute path to the video-file including its name and format (or abs.path to dir with videos). if the link is given in meta-info file, this would be the path to save the video (if its not yet downloaded to this location). if dir is given, each video is named the same as the corresponding meta.
+  * -v PATH_TO_VIDEO
+  	- absolute path to the video-file including its name and format (or abs.path to dir with videos). if the link is given in meta-info file, this would be the path to save the video (if its not yet downloaded to this location). if dir is given, each video is named the same as the corresponding meta.
   * -a PATH_TO_AUDIO  
   	- absolute path to the audio-file including its name and format (or abs.path to dir with audios). this is the where the audio file is saved after being converted. if dir is given, each audio is named the same as the corresponding meta.
   * -m PATH_TO_META   
