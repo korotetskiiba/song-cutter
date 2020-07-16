@@ -5,6 +5,7 @@ import tensorflow as tf
 class VGGishModel:
     def __init__(self):
         # Prepare a postprocessor to munge the model embeddings.
+
         self.pproc = vggish_postprocess.Postprocessor(vggish_params.PCA_DUMP)
 
         with tf.Graph().as_default():
@@ -20,7 +21,8 @@ class VGGishModel:
 
 
     def __del__(self):
-        self.sess.close()
+        if hasattr(self, "sess"):
+            self.sess.close()
 
     def get_embeddings_list(self, files_list):
         # Run inference and postprocessing.
@@ -33,5 +35,6 @@ class VGGishModel:
 
             postprocessed_batch = self.pproc.postprocess(embedding_batch)
             embed_list.append(postprocessed_batch)
+            print(postprocessed_batch.shape)
 
         return embed_list
