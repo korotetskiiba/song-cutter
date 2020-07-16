@@ -20,12 +20,8 @@ class FeatureExtraction:
         assert file_list is not None, "files list not found in "+path_to_pkl
 
 
-<<<<<<< HEAD
-        data_dict_music["embeddings_list"] = model.get_embeddings_list(file_list)
-=======
         data_dict_music["embeddings_list"] = FeatureExtraction.__get_features(file_list)
 
->>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         with open(path_to_save_pkl, "wb") as handle:
             pickle.dump(data_dict_music, handle)
 
