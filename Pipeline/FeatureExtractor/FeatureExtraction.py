@@ -19,6 +19,7 @@ class FeatureExtraction:
         file_list = data_dict_music.get("files_list")
         assert file_list is not None, "files list not found in "+path_to_pkl
 
+
         data_dict_music["embeddings_list"] = FeatureExtraction.__get_features(file_list)
 
         with open(path_to_save_pkl, "wb") as handle:
@@ -45,6 +46,7 @@ class FeatureExtraction:
         with open(path_to_save_pkl, "wb") as handle:
             pickle.dump(data_dict_music, handle)
 
+
     @staticmethod
     def __get_features(file_list):
         # model definition
@@ -58,6 +60,7 @@ class FeatureExtraction:
             if f.endswith(".wav"):
                 file_list.append(os.path.join(path, f))
         return file_list
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocessing')
