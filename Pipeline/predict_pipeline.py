@@ -1,4 +1,4 @@
-# from Pipeline.Preprocessing.PreprocessingModule import PreprocessingModule as pp
+from Pipeline.Preprocessing.PreprocessingModule import PreprocessingModule as pp
 # from Pipeline.FeatureExtractor.FeatureExtraction import FeatureExtraction as fe
 
 # from Pipeline.Segmentation.SegmentationModule import SegmentationModule as sg
@@ -16,8 +16,8 @@ import os
 import pickle
 
 if __name__ == "__main__":
-    pass
-    # pp.convert_to_wav(PATH_TO_VIDEO_FOLDER, PATH_TO_WAV_FOLDER)
+    # pass
+    pp.convert_to_wav(PATH_TO_VIDEO_FOLDER, PATH_TO_WAV_FOLDER)
     # file_list = os.listdir(PATH_TO_WAV_FOLDER)
     # file_list = [PATH_TO_WAV_FOLDER +'/' + file for file in file_list ]
     # data = {'files_list': file_list}
