@@ -187,10 +187,10 @@ class DataGenerator:
                 index1 = index2 + np.argwhere(slice[index2:] == 1)[0][0]
                 if len(np.argwhere(slice[index1:] == 0)) == 0:
                     new_slice[int(index1 * ratio):] = 1.0
-                    continue
+                    break
                 index2 = index1 + np.argwhere(slice[index1:] == 0)[0][0]
                 new_slice[int(index1 * ratio):int(index2 * ratio)] = 1.0
-            mask[i] = new_slice
+            new_mask[i] = new_slice
         return new_mask
 
 

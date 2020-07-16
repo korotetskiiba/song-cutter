@@ -132,3 +132,9 @@ dmypy.json
 .idea/
 
 Pipeline/FeatureExtractor/vggish_files/vggish_model.ckpt
+.idea/
+Pipeline/FeatureExtractor/__pycache__
+Pipeline/DataGenerator/__pycache__
+Pipeline/Preprocessing/__pycache__
+Pipeline/Segmentation/__pycache__
+
