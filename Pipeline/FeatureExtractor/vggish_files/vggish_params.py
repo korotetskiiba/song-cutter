@@ -53,5 +53,10 @@ OUTPUT_TENSOR_NAME = OUTPUT_OP_NAME + ':0'
 AUDIO_EMBEDDING_FEATURE_NAME = 'audio_embedding'
 
 #some constants
+<<<<<<< HEAD
 PCA_DUMP = "FeatureExtractor/vggish_files/vggish_pca_params.npz"
 VGGISH_CPT = "FeatureExtractor/vggish_files/vggish_model.ckpt"
+=======
+PCA_DUMP = "vggish_files/vggish_pca_params.npz"
+VGGISH_CPT = "vggish_files/vggish_model.ckpt"
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71

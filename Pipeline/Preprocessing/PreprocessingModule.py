@@ -12,7 +12,10 @@ class PreprocessingModule:
     def __convert_one_to_wav(path_to_video, path_to_audio):
         """
         Converts given video to .wav-audio.
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_video: path to the video to be converted to audio;
         :param path_to_audio: path to where audio is to be placed after conversion;
         :return: void
@@ -27,7 +30,10 @@ class PreprocessingModule:
     def __convert_dir_to_wav(path_to_video_dir, path_to_audio_dir):
         """
         Converts all videos in a given folder to .wav-audio.
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_video_dir: dir with videos to be converted;
         :param path_to_audio_dir: path to dir where audios are to be placed after conversion;
         :return: void
@@ -44,7 +50,10 @@ class PreprocessingModule:
     def convert_to_wav(path_to_video, path_to_audio):
         """
         Converts given video or dir with videos to .wav-audio(s).
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_video: path to the video(s) to be converted to audio(s) (or path to dir with videos);
         :param path_to_audio: path to where audio(s) is(are) to be placed after conversion (or path to dir) ;
         :return: void
@@ -60,7 +69,10 @@ class PreprocessingModule:
         Cuts audio in disjoint pieces of fixed size starting from the very beginning.
         The last piece is not included in the result if its length != seq_len.
         The cuts are placed in the same dir as the initial audio-file.
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_audio: path to the audio to be cut in pieces;
         :param bin_mask: binary mask of the whole audio-file;
         :param seq_len: length of a desired cut;
@@ -92,8 +104,12 @@ class PreprocessingModule:
         """
         Generates pickle-file - .pkl file with
         dict{"files_list": <list of paths to cuts>, "mask_list": <bin masks for the cuts of the audio>}.
+<<<<<<< HEAD
         .pkl file is placed in the same dir as the initial audio and named the "pickle_samples".
         
+=======
+        .pkl file is placed in the same dir as the initial audio and named the "pickle_of_this_folder".
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param paths_to_cuts: list with all paths to cuts, that were generated from audio-file;
         :param bin_mask: binary mask of the whole audio-file;
         :return: void.
@@ -107,7 +123,10 @@ class PreprocessingModule:
     def __download_from_youtube(link, path_to_video):
         """
         Downloads video from YouTube using the link (found beforehand in the 1st line of meta-info file).
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param link: YouTube link to the video;
         :param path_to_video: path to where video is to be placed after download;
         :return: void
@@ -123,7 +142,10 @@ class PreprocessingModule:
         Converts meta-info into a unified binary format,
         where for each second "1" - "song", "0" - "not song".
         Extracts YouTube link if given in the 1st line of the meta-info file.
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_meta: path to meta-info about the audio;
         :return: binary mask generated based on given meta and link to YouTube src if given.
         """
@@ -166,7 +188,10 @@ class PreprocessingModule:
         """
         Takes the video either from the given location or downloads using the link, converts it to audio,
         cuts audio in pieces, translates the segments-info into binary masks.
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_meta: path to meta-info about the audio(video);
         :param path_to_video: path to the existing video to be converted to training data
                               (if it doesn't exist can be downloaded from YouTube using the
@@ -191,7 +216,10 @@ class PreprocessingModule:
         cuts audios in pieces, translates the segments-info into binary masks. Creates a pkl file with paths
         to all audio-cuts and the binary-masks of all cuts of all videos.
         .pkl file is placed in the same dir as the initial audios and named "pickle_samples".
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_meta_dir: path to dir with meta-info files about the audios(videos);
         :param path_to_video_dir: path to dir with videos to be converted to training data
                               (if the video in the folder doesn't exist, it can be downloaded
@@ -231,7 +259,10 @@ class PreprocessingModule:
         cuts audio(s) in pieces, translates the segments-info into binary masks. Creates a pkl file with paths
         to all audio-cuts and the binary-masks.
         .pkl file is placed in the same dir as the initial audios and named "pickle_samples".
+<<<<<<< HEAD
         
+=======
+>>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
         :param path_to_meta: path to meta-info about the audio(video) (either a path to file or directory);
         :param path_to_video: path to video(s) to be converted to training data
                               (if video doesn't exist, it can be downloaded from YouTube using the
