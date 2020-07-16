@@ -1,16 +1,16 @@
 # from Pipeline.Preprocessing.PreprocessingModule import PreprocessingModule as pp
 # from Pipeline.FeatureExtractor.FeatureExtraction import FeatureExtraction as fe
-
 # from Pipeline.Segmentation.SegmentationModule import SegmentationModule as sg
+import os
 
 # for preprocessing
-PATH_TO_VIDEO_FOLDER = 'auxiliary_files/video_files'
-PATH_TO_WAV_FOLDER = 'auxiliary_files/wav_files_for_predict'
+PATH_TO_VIDEO_FOLDER = os.path.join('auxiliary_files', 'video_files')
+PATH_TO_WAV_FOLDER = os.path.join('auxiliary_files', 'wav_files_for_predict')
 # for feature extraction
-PATH_TO_DATA = 'auxiliary_files/wav_files/pickle_of_this_folder.pkl'
-PATH_TO_DATA_WITH_EMBEDDINGS = 'auxiliary_files/res.pkl'
+PATH_TO_DATA = os.path.join('auxiliary_files', 'wav_files', 'pickle_of_this_folder.pkl')
+PATH_TO_DATA_WITH_EMBEDDINGS = os.path.join('auxiliary_files', 'res.pkl')
 # for model
-PATH_TO_CHECKPOINT_FILE = 'auxiliary_files/model.h5'
+PATH_TO_CHECKPOINT_FILE = os.path.join('auxiliary_files', 'model.h5')
 
 import os
 import pickle

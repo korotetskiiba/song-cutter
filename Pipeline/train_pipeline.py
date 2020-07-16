@@ -3,16 +3,17 @@ from Pipeline.FeatureExtractor.FeatureExtraction import FeatureExtraction as fe
 from Pipeline.DataGenerator.DataGenerator import DataGenerator as dg
 from Pipeline.DataGenerator.DataGenerator import KindOfData as kd
 from Pipeline.Segmentation.SegmentationModule import SegmentationModule as sg
+import os
 
 # define some path
-PATH_TO_META_FOLDER = 'auxiliary_files/data_to_preproc'
-PATH_TO_VIDEO_FOLDER = 'auxiliary_files/video_files'
-PATH_TO_WAV_FOLDER = 'auxiliary_files/wav_files'
-PATH_TO_LIVE_DATA_WITH_EMBEDDINGS = 'auxiliary_files/res.pkl'
-PATH_TO_LIVE_DATA = 'auxiliary_files/wav_files/pickle_samples.pkl' 
-PATH_TO_CHECKPOINT_FILE = 'auxiliary_files/model.h5'
-PATH_TO_METRIC_WITHOUT_TR = 'auxiliary_files/metrics/metrics_without_additional_tr'
-PATH_TO_METRIC_WITH_TR = 'auxiliary_files/metrics/metrics_with_additional_tr'
+PATH_TO_META_FOLDER = os.path.join('auxiliary_files', 'data_to_preproc')
+PATH_TO_VIDEO_FOLDER = os.path.join('auxiliary_files', 'video_files')
+PATH_TO_WAV_FOLDER = os.path.join('auxiliary_files', 'wav_files')
+PATH_TO_LIVE_DATA_WITH_EMBEDDINGS = os.path.join('auxiliary_files', 'res.pkl')
+PATH_TO_LIVE_DATA = os.path.join('auxiliary_files', 'wav_files', 'pickle_samples.pkl')
+PATH_TO_CHECKPOINT_FILE = os.path.join('auxiliary_files', 'model.h5')
+PATH_TO_METRIC_WITHOUT_TR = os.path.join('auxiliary_files', 'metrics', 'metrics_without_additional_tr')
+PATH_TO_METRIC_WITH_TR = os.path.join('auxiliary_files', 'metrics', 'metrics_with_additional_tr')
 
 if __name__ == "__main__":
     # preprocesing live samples ang get embeddings
