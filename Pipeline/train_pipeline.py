@@ -6,11 +6,15 @@ from Pipeline.Segmentation.SegmentationModule import SegmentationModule as sg
 import os
 
 # define some path
+# for preprocessing
 PATH_TO_META_FOLDER = os.path.join('auxiliary_files', 'data_to_preproc')
 PATH_TO_VIDEO_FOLDER = os.path.join('auxiliary_files', 'video_files')
 PATH_TO_WAV_FOLDER = os.path.join('auxiliary_files', 'wav_files')
-PATH_TO_LIVE_DATA_WITH_EMBEDDINGS = os.path.join('auxiliary_files', 'res.pkl')
+# for feature extraction
 PATH_TO_LIVE_DATA = os.path.join('auxiliary_files', 'wav_files', 'pickle_samples.pkl')
+# for feature extraction and data generator
+PATH_TO_LIVE_DATA_WITH_EMBEDDINGS = os.path.join('auxiliary_files', 'res.pkl')
+# for model and evaluation
 PATH_TO_CHECKPOINT_FILE = os.path.join('auxiliary_files', 'model.h5')
 PATH_TO_METRIC_WITHOUT_TR = os.path.join('auxiliary_files', 'metrics', 'metrics_without_additional_tr')
 PATH_TO_METRIC_WITH_TR = os.path.join('auxiliary_files', 'metrics', 'metrics_with_additional_tr')

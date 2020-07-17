@@ -137,4 +137,5 @@ Pipeline/FeatureExtractor/__pycache__
 Pipeline/DataGenerator/__pycache__
 Pipeline/Preprocessing/__pycache__
 Pipeline/Segmentation/__pycache__
+Pipeline/auxiliary_files
 
