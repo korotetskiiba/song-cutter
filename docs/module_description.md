@@ -190,11 +190,12 @@ implemented methods:
 	- `path_to_file` - path to video or sound file (extension must be '.mp4' or '.wav')
 	- `target_path` - path to target directory to save slices, with name prefix used for each slice
 	- `prediction_intervals` - the list of time intervals got from `predict(self, x_data)`
-- `evaluate(self, x_test, y_test, target_path)`: evaluate model (count metrics, draw ROC curve plot, draw plot with the ground truth mask and predicted mask)
+- `evaluate(self, x_test, y_test, target_path, plot_time_clamp=1000)`: evaluate model (count metrics, draw ROC curve plot, draw plot with the ground truth mask and predicted mask)
 	input:
 	- `x_test` - data tensor of shape `(samples, time, embeddings)`
 	- `y_test` - the ground truth tensor of shape `(samples, time, 1)`
 	- `target_path` - directory where plots and metrics will be saved
+	- `plot_time_clamp` - the duration of the part of the mask to make plot
 
 ### Usage example:
 
@@ -232,11 +233,7 @@ evaluate: calculate and save metrics, draw plots:
 ```
 save_file = "evaluate_1"
 
-<<<<<<< HEAD
 segm_module.evaluate(x_test, y_test, save_file)
-```
-=======
-segm_module.evaluate(x_sample, ground_truth, save_file)
 ```
 
 #### CLI
@@ -269,4 +266,3 @@ To run as part of inference-pipeline, to cut video into music slices:
 ```
 python SegmentationModule.py -i path_to_pkl -c path_to_checkpoint -o path_to_video -t path_to_slices -f load_cut
 ```
->>>>>>> 35c85f696167e89394c023d059671b0608e1bd71
