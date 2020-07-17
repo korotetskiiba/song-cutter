@@ -69,7 +69,7 @@ class SegmentationModule:
         sample_mask = self.__get_raw_prediction(x_data)  # firstly, get raw prediction
         if need_smoothing:
             sample_mask = self.__get_smooth_mask(sample_mask)  # smooth mask
-        absolute_intervals = self.__get_intervals_by_mask(sample_mask[0,:])  # convert mask to embedding intervals
+        absolute_intervals = self.__get_intervals_by_mask(sample_mask[0, :])  # convert mask to embedding intervals
         time_intervals = self.__abs_intervals_to_time(absolute_intervals)  # convert intervals to time intervals
         return time_intervals
 
@@ -96,13 +96,14 @@ class SegmentationModule:
         extension = Path(path_to_file).suffix  # get target file extension
         Cutter.slice_file(path_to_file, target_path, prediction_intervals, extension=extension)
 
-    def evaluate(self, x_test, y_test, target_path):
+    def evaluate(self, x_test, y_test, target_path, plot_time_clamp=1000):
         """Evaluate trained or loaded model on test data. Saves plots and metrics to the target_path
 
         Args:
              x_test: test data tensor of embeddings
-             y_test: ground truth
+             y_test: test data tensor of masks
              target_path: directory where plots and metrics will be saved
+             plot_time_clamp: the duration of the part to make plot mask (from the beginning)
         """
         assert len(x_test.shape) == 3, "X_test shape must be (samples, duration, embeddings)"
         assert len(y_test.shape) == 3, "Y_test shape must be (samples, duration, 1)"
@@ -118,9 +119,12 @@ class SegmentationModule:
 
         # create all reports
         Eval.count_metrics_on_sample(smooth_mask, ground_truth, metrics_fname)  # count metrics
-        # draw plot for the first sample only
-        Eval.draw_roc(sample_mask[0,:], smooth_mask[0,:], ground_truth[0,:], roc_fname)  # draw ROC curve
-        Eval.draw_mask_plots(smooth_mask[0,:], ground_truth[0,:],
+        # stack masks and draw plots
+        sample_complete_mask = sample_mask.reshape(-1, order='C')
+        smooth_complete_mask = smooth_mask.reshape(-1, order='C')
+        ground_truth_complete = ground_truth.reshape(-1, order='C')
+        Eval.draw_roc(sample_complete_mask, smooth_complete_mask, ground_truth_complete, roc_fname)  # draw ROC curve
+        Eval.draw_mask_plots(smooth_complete_mask[0:plot_time_clamp], ground_truth_complete[0:plot_time_clamp],
                              mask_plot_fname)  # draw plot of prediction and ground truth
 
     # private:
@@ -139,7 +143,7 @@ class SegmentationModule:
         masks = Models.predict_track_pack(x_data, self.model)
         # invert masks
         for sample_num in range(masks.shape[0]):
-            masks[sample_num,:] = [1 - v for v in masks[sample_num, :]]
+            masks[sample_num, :] = [1 - v for v in masks[sample_num, :]]
         return masks
 
     @staticmethod
@@ -158,10 +162,10 @@ class SegmentationModule:
 
         for sample_num in range(sample_mask.shape[0]):
             # Convolve data
-            smooth = convolve(sample_mask[sample_num,:], g_kernel, boundary='extend')
+            smooth = convolve(sample_mask[sample_num, :], g_kernel, boundary='extend')
             # to binary mask
             smooth = [int(t > round_border) for t in smooth]
-            smooth_masks[sample_num,:] = smooth
+            smooth_masks[sample_num, :] = smooth
         return smooth_masks
 
     @staticmethod

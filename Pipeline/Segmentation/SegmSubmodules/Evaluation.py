@@ -17,7 +17,7 @@ def draw_mask_plots(prediction, ground_truth, plot_file):
     plt.figure()
     x = [x for x in range(len(prediction))]  # creating net to make plots
     plt.plot(x, prediction, label='prediction')
-    plt.plot(x, ground_truth, label='ground truth')
+    plt.plot(x, ground_truth, label='ground truth', linestyle='--')
     plt.xlabel('Time')
     plt.ylabel('Song mask')
     plt.title('Song mask plot')
@@ -48,11 +48,13 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_list=No
         sample_cnt = prediction.shape[0]
         divisor = 0  # for normalization
         for current_num in range(sample_cnt):
-            if K.sum(ground_truth[current_num,:] * prediction[current_num,:]) > 0:  # don't evaluate sample without song
+            if K.sum(ground_truth[current_num, :] * prediction[current_num, :]) > 0\
+                    and K.sum(ground_truth[current_num, :]) < ground_truth.shape[1]:
+                # evaluate only on part with both positive and negative classes
                 divisor += 1
                 for metric in metrics_list:
-                    json_dict[metric.__name__] += float(metric(ground_truth[current_num,:],
-                                                               prediction[current_num,:]))
+                    json_dict[metric.__name__] += float(metric(ground_truth[current_num, :],
+                                                               prediction[current_num, :]))
 
         for metric in metrics_list:  # normalize
             json_dict[metric.__name__] /= divisor
