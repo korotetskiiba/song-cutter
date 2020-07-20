@@ -5,10 +5,10 @@ import datetime
 import os.path
 from pathlib import Path
 
-import SegmSubmodules.Models as Models
-import SegmSubmodules.Evaluation as Eval
-import SegmSubmodules.PredictionCutter as Cutter
-import SegmSubmodules.CLHelper as CommandLineHelper
+import Pipeline.Segmentation.SegmSubmodules.Models as Models
+import Pipeline.Segmentation.SegmSubmodules.Evaluation as Eval
+import Pipeline.Segmentation.SegmSubmodules.PredictionCutter as Cutter
+import Pipeline.Segmentation.SegmSubmodules.CLHelper as CommandLineHelper
 
 
 class SegmentationModule:
@@ -69,7 +69,7 @@ class SegmentationModule:
         sample_mask = self.__get_raw_prediction(x_data)  # firstly, get raw prediction
         if need_smoothing:
             sample_mask = self.__get_smooth_mask(sample_mask)  # smooth mask
-        absolute_intervals = self.__get_intervals_by_mask(sample_mask)  # convert mask to embedding intervals
+        absolute_intervals = self.__get_intervals_by_mask(sample_mask[0, :])  # convert mask to embedding intervals
         time_intervals = self.__abs_intervals_to_time(absolute_intervals)  # convert intervals to time intervals
         return time_intervals
 
@@ -96,16 +96,17 @@ class SegmentationModule:
         extension = Path(path_to_file).suffix  # get target file extension
         Cutter.slice_file(path_to_file, target_path, prediction_intervals, extension=extension)
 
-    def evaluate(self, x_test, y_test, target_path):
+    def evaluate(self, x_test, y_test, target_path, plot_time_clamp=1000):
         """Evaluate trained or loaded model on test data. Saves plots and metrics to the target_path
 
         Args:
              x_test: test data tensor of embeddings
-             y_test: ground truth
+             y_test: test data tensor of masks
              target_path: directory where plots and metrics will be saved
+             plot_time_clamp: the duration of the part to make plot mask (from the beginning)
         """
         assert len(x_test.shape) == 3, "X_test shape must be (samples, duration, embeddings)"
-        assert len(y_test.shape) == 1, "Y_test shape must be (duration, )"
+        assert len(y_test.shape) == 3, "Y_test shape must be (samples, duration, 1)"
         roc_fname = os.path.join(target_path, "roc_curve.png")  # create names for artifacts
         mask_plot_fname = os.path.join(target_path, "masks.png")
         metrics_fname = os.path.join(target_path, "metrics.json")
@@ -113,10 +114,18 @@ class SegmentationModule:
         sample_mask = self.__get_raw_prediction(x_test)  # raw prediction
         smooth_mask = self.__get_smooth_mask(sample_mask)  # smooth prediction
 
+        ground_truth = y_test.copy().reshape(y_test.shape[0],
+                                             y_test.shape[1])  # reshape to the same format as prediction
+
         # create all reports
-        Eval.count_metrics_on_sample(smooth_mask, y_test, metrics_fname)  # count metrics
-        Eval.draw_roc(sample_mask, smooth_mask, y_test, roc_fname)  # draw ROC curve
-        Eval.draw_mask_plots(smooth_mask, y_test, mask_plot_fname)  # draw plot of prediction and ground truth
+        Eval.count_metrics_on_sample(smooth_mask, ground_truth, metrics_fname)  # count metrics
+        # stack masks and draw plots
+        sample_complete_mask = sample_mask.reshape(-1, order='C')
+        smooth_complete_mask = smooth_mask.reshape(-1, order='C')
+        ground_truth_complete = ground_truth.reshape(-1, order='C')
+        Eval.draw_roc(sample_complete_mask, smooth_complete_mask, ground_truth_complete, roc_fname)  # draw ROC curve
+        Eval.draw_mask_plots(smooth_complete_mask[0:plot_time_clamp], ground_truth_complete[0:plot_time_clamp],
+                             mask_plot_fname)  # draw plot of prediction and ground truth
 
     # private:
     def __build_new_model(self):
@@ -124,17 +133,18 @@ class SegmentationModule:
         self.model = Models.build_model()
 
     def __get_raw_prediction(self, x_data):
-        """Gets raw prediction (binary mask vector corresponding to embeddings)
+        """Gets raw predictions
 
         Args:
             x_data: data tensor of embeddings to make predictions
 
         Returns:
             binary mask vector of predictions"""
-        mask = Models.predict_whole_track(x_data, self.model)
-        # invert mask
-        mask = [1 - v for v in mask]
-        return mask
+        masks = Models.predict_track_pack(x_data, self.model)
+        # invert masks
+        for sample_num in range(masks.shape[0]):
+            masks[sample_num, :] = [1 - v for v in masks[sample_num, :]]
+        return masks
 
     @staticmethod
     def __get_smooth_mask(sample_mask, round_border=0.3):
@@ -148,13 +158,15 @@ class SegmentationModule:
             smooth mask (binary mask vector)"""
         # Create kernel
         g_kernel = Gaussian1DKernel(stddev=5)
+        smooth_masks = np.zeros(sample_mask.shape)  # init answer tensor
 
-        # Convolve data
-        smooth_mask = convolve(sample_mask, g_kernel, boundary='extend')
-
-        # to binary mask
-        smooth_mask = [int(t > round_border) for t in smooth_mask]
-        return smooth_mask
+        for sample_num in range(sample_mask.shape[0]):
+            # Convolve data
+            smooth = convolve(sample_mask[sample_num, :], g_kernel, boundary='extend')
+            # to binary mask
+            smooth = [int(t > round_border) for t in smooth]
+            smooth_masks[sample_num, :] = smooth
+        return smooth_masks
 
     @staticmethod
     def __get_intervals_by_mask(mask):

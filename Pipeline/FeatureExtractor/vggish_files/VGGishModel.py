@@ -20,7 +20,9 @@ class VGGishModel:
 
 
     def __del__(self):
-        self.sess.close()
+        if hasattr(self, "sess"):
+            self.sess.close()
+
 
     def get_embeddings_list(self, files_list):
         # Run inference and postprocessing.
