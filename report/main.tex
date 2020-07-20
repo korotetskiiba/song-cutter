@@ -6,9 +6,9 @@
 \usepackage[english, russian]{babel} %русский язык, не менять
 \usepackage{fontspec} %различные шрифты
 \setmainfont{Times New Roman}
-\usepackage{biblatex}
+\usepackage[backend=biber,bibencoding=utf8,sorting=nty,maxcitenames=2,style=numeric,citestyle=numeric]{biblatex} % Список источников
 \addbibresource{lit.bib}
-
+\usepackage[nottoc,notlot,notlof]{tocbibind}
 \usepackage{subcaption}
 \defaultfontfeatures{Ligatures={TeX},Renderer=Basic}
 \usepackage{hyperref} %гиперссылки
@@ -52,5 +52,6 @@
 	\newpage
 	\subfile{body}
 	\newpage
-	\printbibliography
+	
+
 \end{document}
