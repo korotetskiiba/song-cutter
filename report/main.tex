@@ -1,4 +1,4 @@
-%XeLaTeX+makeIndex+BibTeX
+%XeLaTeX+makeIndex+Biber
 
 \documentclass[a4paper,12pt]{article} %14pt - extarticle
 \usepackage[utf8]{inputenc} %русский язык, не менять
@@ -6,6 +6,10 @@
 \usepackage[english, russian]{babel} %русский язык, не менять
 \usepackage{fontspec} %различные шрифты
 \setmainfont{Times New Roman}
+\usepackage{biblatex}
+\addbibresource{lit.bib}
+
+\usepackage{subcaption}
 \defaultfontfeatures{Ligatures={TeX},Renderer=Basic}
 \usepackage{hyperref} %гиперссылки
 \hypersetup{pdfstartview=FitH,  linkcolor=black, urlcolor=black, colorlinks=true,}
@@ -22,7 +26,6 @@
 \newcommand{\RomanNumeralCaps}[1]
 {\MakeUppercase{\romannumeral #1}}
 \usepackage[linesnumbered, ruled]{algorithm2e}%pseudocode 
-\usepackage{autonum}
 \SetKwRepeat{Do}{do}{while}
 \lstset{language=python,
 	%keywordstyle=\color{blue},
@@ -49,5 +52,5 @@
 	\newpage
 	\subfile{body}
 	\newpage
-	\subfile{bibliography}
+	\printbibliography
 \end{document}

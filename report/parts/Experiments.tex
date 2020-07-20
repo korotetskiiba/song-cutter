@@ -1,0 +1,36 @@
+\documentclass[../body.tex]{subfiles}
+\begin{document}
+На основе разработанных модулей были составлены программные конвейеры двух конфигураций:
+
+\begin{itemize}
+	\item Train --- для обучения модели;
+	\item Predict --- для использования модели, получения предсказаний.
+\end{itemize}
+
+С помощью Train конвейера была обучена модель. Подробности обучения в таблице (\ref{FitParamsTable}) ниже.
+
+\begin{table}[H]
+	\centering
+	\begin{tabular}{|c|c|}
+		\hline
+		Параметр & Значение \\
+		\hline
+		Набор тренировочных данных & Google AudioSet \cite{audioset} \\
+		\hline
+		Мощность обучающей выборки & 19090 \\
+		\hline
+		Мощность валидационной выборки & 8181 \\
+		\hline
+		Число эпох & 30 \\
+		\hline
+		Опитмизатор & ADAM \cite{adam_optimizer} \\
+		\hline
+		Функция потерь & Бинарная перекрёстная энтропия \cite{wiki:bin_crossentropy} \\
+		\hline
+	\end{tabular}
+	\caption{Подробности обучения модели}\label{FitParamsTable}
+\end{table}
+
+В секции (\ref{MetricsSection}), повсященной полученным результатам,  приведены результаты обучения модели.
+
+\end{document}
