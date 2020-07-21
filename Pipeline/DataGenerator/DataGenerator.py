@@ -27,7 +27,8 @@ class DataGenerator:
     __path_to_genres = 'DataGenerator./meta_files/genres_dump.pkl'
 
     @classmethod
-    def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets'):
+    def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets',
+                             need_shuffle:bool=True):
         """
         Get embedding and mask of data
         :param type: type of set to get;
@@ -36,6 +37,7 @@ class DataGenerator:
         :param path_to_live_data: pkl file containing information about masks and embeddings of samples from live set
         :param path_to_save: path to folder for saving samples;
         :param name: name of file to save samples
+        :param need_shuffle: flag, False if it's not needed to shuffle data;
         :return: result: a dictionary containing train, validation and test samples
         """
 
@@ -49,11 +51,11 @@ class DataGenerator:
         if type is KindOfData.AUDIOSET:
             result = cls.__get_generated_audioset_samples(n_samples, k)
         elif type is KindOfData.LIVE:
-            result = cls.__get_generated_live_samples(path_to_live_data, k)
+            result = cls.__get_generated_live_samples(path_to_live_data, k, need_shuffle)
         elif type is KindOfData.ALL:
             # generate samples of both type
             result1 = cls.__get_generated_audioset_samples(n_samples, k)
-            result2 = cls.__get_generated_live_samples(path_to_live_data, k)
+            result2 = cls.__get_generated_live_samples(path_to_live_data, k, need_shuffle)
             result = {}
             # mixed samples
             for key in result1:
@@ -62,7 +64,8 @@ class DataGenerator:
                 data = np.vstack([data1, data2])
                 mask = np.vstack([mask1, mask2])
                 # shuffle embeddings and masks of different sets in the same order
-                data, mask = cls.__shuffle(data, mask)
+                if need_shuffle:
+                    data, mask = cls.__shuffle(data, mask)
                 result[key] = (data, mask)
         #save if need
         if path_to_save:
@@ -104,16 +107,17 @@ class DataGenerator:
         return result
 
     @classmethod
-    def __get_generated_live_samples(cls, path, k):
+    def __get_generated_live_samples(cls, path, k, need_shuffle):
         """ Get embedding and mask of live data (Youtube video, film etc)
                    :param path: pkl file containing information about masks and embeddings of samples from live set;
                    :param k: coefficients for the capacities of sets (train:val:test);
+                   :param need_shuffle: flag, True if needed shuffling;
                    :return: result: a dictionary containing train, validation and test live samples
                """
 
         # prepare data to generate samples if necessary
         if cls.__mask_live is None:
-            cls.__generate_live_sample(path)
+            cls.__generate_live_sample(path, need_shuffle=need_shuffle)
         # generate samples
         n = len(cls.__data_live)
         data_train, mask_train = cls.__data_live[0: int(k[0] * n)], cls.__mask_live[0: int(k[0] * n)]
@@ -142,9 +146,10 @@ class DataGenerator:
         cls.__music_data = np.vstack([cls.__music_data, music_data_new_res])
 
     @classmethod
-    def __generate_live_sample(cls, path):
+    def __generate_live_sample(cls, path, need_shuffle):
         """Generate samples from YouTube video, films etc
                 :param path: pkl file containing information about masks and embeddings of samples from live set
+                :need_shuffle: flag, True if shuffling data is needed
                 :return: void
         """
         # read data
@@ -160,7 +165,10 @@ class DataGenerator:
 
         mask_list = cls.__mask_scaling(mask_list, 100)
         # shuffle embeddings and masks in the same order
-        cls.__data_live, cls.__mask_live = cls.__shuffle(live_embed, mask_list)
+        if need_shuffle:
+            cls.__data_live, cls.__mask_live = cls.__shuffle(live_embed, mask_list)
+        else:
+            cls.__data_live, cls.__mask_live = (live_embed, mask_list)
         # np.zeros((N_samples, seq_len, 1), dtype=np.float32)
         sh = cls.__mask_live.shape
         cls.__mask_live = cls.__mask_live.reshape(sh[0], sh[1], 1)
