@@ -128,17 +128,20 @@ class PreprocessingModule:
         yt = YouTubeMetaExtraction(link)
         data = {}
 
+        data['link'] = link
         data['channel'] = yt.get_channel_name()
         data['title'] = yt.get_title()
         data['codes'] = yt.get_time_codes()
         codes = yt.get_captions_type()
         if len(codes) > 0:
             data['captions'] = yt.get_caption(codes[0].code).replace('\n', ' ').replace(';', ' ')
+        else:
+            data['captions'] = None
         data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
         #data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
 
         with open(os.path.join(dir, name)+'.csv', "a", newline='') as csv_file:
-            writer = csv.writer(csv_file, delimiter=',')
+            writer = csv.writer(csv_file, delimiter=';')
             writer.writerow([data[x] for x in data])
 
 
