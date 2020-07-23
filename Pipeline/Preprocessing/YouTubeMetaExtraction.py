@@ -1,7 +1,7 @@
 import pytube
 import argparse
 import csv
-
+import re
 
 class YouTubeMetaExtraction:
 
@@ -21,6 +21,15 @@ class YouTubeMetaExtraction:
     def get_html(self):
         return pytube.request.get(self.__url)
 
+    def get_time_codes(self):
+        pattern = '[0-9]+:[0-9]+[^\n\r]+'
+        return re.findall(pattern, self.__video.description)
+
+    def get_caption(self, language_code):
+        return self.__video.captions.get_by_language_code(language_code)
+    
+    def get_captions(self):
+        return self.__video.captions.all()
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocessing')
