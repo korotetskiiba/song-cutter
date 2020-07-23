@@ -3,6 +3,7 @@ import argparse
 import csv
 import re
 
+
 class YouTubeMetaExtraction:
 
     def __init__(self, url):
@@ -33,6 +34,7 @@ class YouTubeMetaExtraction:
 
     def get_captions_type(self):
         return self.__video.captions.all()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocessing')
