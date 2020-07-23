@@ -23,12 +23,15 @@ class YouTubeMetaExtraction:
 
     def get_time_codes(self):
         pattern = '[0-9]+:[0-9]+[^\n\r]+'
-        return re.findall(pattern, self.__video.description)
+        codes = re.findall(pattern, self.__video.description)
+        return codes
 
     def get_caption(self, language_code):
-        return self.__video.captions.get_by_language_code(language_code)
-    
-    def get_captions(self):
+        cap = self.__video.captions.get_by_language_code(language_code)
+        assert cap is not None, "Invalid language code"
+        return cap.generate_srt_captions()
+
+    def get_captions_type(self):
         return self.__video.captions.all()
 
 if __name__ == "__main__":
@@ -45,9 +48,11 @@ if __name__ == "__main__":
 
     data['channel'] = yt.get_channel_name()
     data['title'] = yt.get_title()
-    data['description'] = yt.get_description().replace('\n', '').replace(';', '')
-    data['html'] = yt.get_html().replace('\n', '').replace(';', '')
+    data['codes'] = yt.get_time_codes()
+    data['captions'] = yt.get_caption('ru').replace('\n', ' ').replace(';', ' ')
+    data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
+    data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
 
     with open(args.path_to_save_csv, "a", newline='') as csv_file:
         writer = csv.writer(csv_file, delimiter=',')
-        writer.writerow([data['channel'], data['title'], data['description'], data['html']])
+        writer.writerow([data[x] for x in data])
