@@ -6,6 +6,7 @@ from Pipeline.DataGenerator.DataGenerator import KindOfData as kd
 import os
 import pickle
 
+
 # define some path
 # for preprocessing
 PATH_TO_META_FOLDER = os.path.join('auxiliary_files', 'data_to_preproc')
@@ -18,7 +19,9 @@ LIVE_DATA_TARGET = 'pickle_samples.pkl'
 PATH_TO_LIVE_DATA_WITH_EMBEDDINGS = os.path.join('auxiliary_files', 'products')
 LIVE_WITH_EMBEDDINGS_TARGET = 'res.pkl'
 # for dataset
-PATH_TO_DATASET = os.path.join('auxiliary_files', 'dataset', 'live_set.pkl')
+PATH_TO_DATASET = os.path.join('auxiliary_files', 'dataset')
+DATASET_NAME = 'live_set.pkl'
+
 
 if __name__ == "__main__":
 
@@ -36,7 +39,7 @@ if __name__ == "__main__":
         for cur_path in [path_to_meta, path_to_video, path_to_wav, path_to_live_data_dir,
                          path_to_live_data_with_embeddings_dir]:
             if not os.path.isdir(cur_path):
-                os.mkdir(cur_path)
+                os.makedirs(cur_path, exist_ok=True)
 
         # create paths to the target pickles
         path_to_live_data = os.path.join(path_to_live_data_dir, LIVE_DATA_TARGET)
@@ -55,5 +58,10 @@ if __name__ == "__main__":
         dataset_dict[data_part] = (x, y)
 
     # save dataset
-    with open(PATH_TO_DATASET, "wb") as f:
+    if not os.path.isdir(PATH_TO_DATASET):
+        os.makedirs(PATH_TO_DATASET, exist_ok=True)
+
+    dataset_filepath = os.path.join(PATH_TO_DATASET, DATASET_NAME)
+    with open(dataset_filepath, "wb") as f:
         pickle.dump(dataset_dict, f)
+
