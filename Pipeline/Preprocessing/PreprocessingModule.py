@@ -4,6 +4,8 @@ from datetime import datetime
 import os
 import argparse
 import pickle
+from Pipeline.Preprocessing.YouTubeMetaExtraction import YouTubeMetaExtraction
+import csv
 
 
 class PreprocessingModule:
@@ -110,6 +112,36 @@ class PreprocessingModule:
         name = str(os.path.basename(path_to_video).split(".")[0])
         yt = YouTube(link)
         yt.streams.first().download(dir, filename=name)
+
+        PreprocessingModule.__download_youtube_meta(link, path_to_video)
+
+    @staticmethod
+    def __download_youtube_meta(link, path_to_meta):
+        """
+        Downloads video from YouTube using the link (found beforehand in the 1st line of meta-info file).
+        :param link: YouTube link to the video;
+        :param path_to_meta: path to where meta-info is to be placed after download;
+        :return: void
+        """
+        dir = os.path.dirname(path_to_meta)
+        name = str(os.path.basename(path_to_meta).split(".")[0])
+        yt = YouTubeMetaExtraction(link)
+        data = {}
+
+        data['channel'] = yt.get_channel_name()
+        data['title'] = yt.get_title()
+        data['codes'] = yt.get_time_codes()
+        codes = yt.get_captions_type()
+        if len(codes) > 0:
+            data['captions'] = yt.get_caption(codes[0].code).replace('\n', ' ').replace(';', ' ')
+        data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
+        #data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
+
+        with open(os.path.join(dir, name)+'.csv', "a", newline='') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            writer.writerow([data[x] for x in data])
+
+
 
     @staticmethod
     def __preprocess_meta(path_to_meta):
