@@ -13,37 +13,75 @@ class YouTubeMetaExtraction:
         self.__url = url
 
     def get_description(self):
+        """
+        Getter for the description of the video
+        :return: description (str)
+        """
         return self.__video.description
 
     def get_title(self):
+        """
+        Getter for the title of the video
+        :return: title (str)
+        """
         return self.__video.title
 
     def get_channel_name(self):
+        """
+        Getter for the author of the video
+        :return: author (str)
+        """
         return self.__video.author
 
     def get_html(self):
+        """
+        Getter for the html code of a page with a video
+        :return: html code (str)
+        """
         return pytube.request.get(self.__url)
 
     def get_time_codes_list_from_description(self):
+        """
+        Getter for a list with time codes and names from description
+        :return: list with time codes and names (list)
+        """
         pattern = '[0-9]+:[0-9]+[^\n\r]+'
         codes = re.findall(pattern, self.__video.description)
         return codes
 
     def get_songs_list_from_description(self):
+        """
+        Getter for a list with the names of parts from the description
+        :return: list with names (list)
+        """
         songs = self.get_time_codes_list_from_description()
         for i in range(len(songs)):
             songs[i] = re.sub('[0-9:]+[\W]+', '', songs[i])
         return songs
 
     def get_caption(self, language_code):
+        """
+        Getter for the caption to the video
+        :param language_code: language code
+        :return: caption (str)
+        """
         cap = self.__video.captions.get_by_language_code(language_code)
         assert cap is not None, "Invalid language code"
         return cap.generate_srt_captions()
 
     def get_captions_type_list(self):
+        """
+        Getter for the types of caption to the video
+        :return: types (list)
+        """
         return self.__video.captions.all()
 
     def get_music_parts_from_caption(self, language_code):
+        """
+        Getter for the parts from caption with a music tag
+        :param language_code: language code
+        :return: times of parts (list)
+        """
         lang = {'en': 'music', 'ru': 'музыка'}
         if language_code not in lang:
             return None
@@ -58,12 +96,20 @@ class YouTubeMetaExtraction:
         return mus
 
     def get_proper_name_list(self):
+        """
+        Getter for the proper name from description
+        :return: proper names (list)
+        """
         names = re.findall('[\"«][^»\"]+[»\"]', self.__video.description)
         for i in range(len(names)):
             names[i] = re.search('[^«»\"]+', names[i]).group()
         return names
 
     def get_specialized_information(self):
+        """
+        Getter for the information from known channels
+        :return: dict with information (dict)
+        """
         channel = self.get_channel_name()
 
         if channel == KNOWN_CHANNELS[0]:
@@ -73,6 +119,10 @@ class YouTubeMetaExtraction:
         return {}
 
     def __get_urgant_info(self):
+        """
+        Getter for the information from 'Вечерний Ургант'
+        :return: dict with information (dict)
+        """
         info = {}
         title = re.search('\w[^.]+[-–][^.\n]+', self.get_title())
         if title is None:
@@ -83,6 +133,10 @@ class YouTubeMetaExtraction:
         return info
 
     def __get_ntv_info(self):
+        """
+        Getter for the information from 'НТВ'(Квартирник НТВ у Маргулиса)
+        :return: dict with information (dict)
+        """
         artist = re.search(': [^\n]+', self.get_title())
         if artist is None:
             return {}
