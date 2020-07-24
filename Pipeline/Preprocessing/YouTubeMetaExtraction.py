@@ -35,6 +35,19 @@ class YouTubeMetaExtraction:
     def get_captions_type(self):
         return self.__video.captions.all()
 
+    def get_music_from_caption(self, language_code):
+        lang = {'en': 'music', 'ru': 'музыка'}
+        assert language_code in lang, "Invalid language code for music from caption"
+
+        cap = self.__video.captions.get_by_language_code(language_code)
+        assert cap is not None, "Invalid language code"
+
+        caption = cap.generate_srt_captions()
+        mus = re.findall('[0-9]+[,:0-9]+ --> [0-9]+[,:0-9]+\n\['+lang[language_code]+']', caption)
+        for i in range(len(mus)):
+            mus[i] = re.search('[0-9]+[,:0-9]+ --> [0-9]+[,:0-9]+', mus[i]).group().replace('->', '')
+        return mus
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocessing')
@@ -50,11 +63,22 @@ if __name__ == "__main__":
 
     data['channel'] = yt.get_channel_name()
     data['title'] = yt.get_title()
-    data['codes'] = yt.get_time_codes()
-    data['captions'] = yt.get_caption('ru').replace('\n', ' ').replace(';', ' ')
+    data['description_codes'] = yt.get_time_codes()
+
+    captions = yt.get_captions_type()
+    if len(captions) > 0:
+        lang_code = captions[0].code
+        data['caption'] = yt.get_caption(lang_code).replace('\n', ' ').replace(';', ' ')
+        data['mus_caption'] = yt.get_music_from_caption(lang_code)
+    else:
+        data['captions'] = None
+        data['mus_caption'] = None
+
+
     data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
-    data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
+    data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ').encode('utf-8')
 
     with open(args.path_to_save_csv, "a", newline='') as csv_file:
-        writer = csv.writer(csv_file, delimiter=',')
-        writer.writerow([data[x] for x in data])
+        writer = csv.writer(csv_file, delimiter=';')
+        for x in data:
+            writer.writerow([x, data[x]])
