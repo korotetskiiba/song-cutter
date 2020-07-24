@@ -20,7 +20,7 @@ PATH_TO_LIVE_DATA_WITH_EMBEDDINGS = os.path.join('auxiliary_files', 'products')
 LIVE_WITH_EMBEDDINGS_TARGET = 'res.pkl'
 # for dataset
 PATH_TO_DATASET = os.path.join('auxiliary_files', 'dataset')
-DATASET_NAME = 'live_set.pkl'
+DATASET_NAME = 'live_set_genres.pkl'
 
 
 if __name__ == "__main__":
@@ -54,9 +54,8 @@ if __name__ == "__main__":
         sets = dg.get_generated_sample(kd.LIVE, [1, 0, 0], path_to_live_data=path_to_live_data_with_embeddings,
                                        need_shuffle=False)
 
-        x, y = sets['train']  # get samples
-        dataset_dict[data_part] = (x, y)
-
+        x, y, genres = sets['train']  # get samples
+        dataset_dict[data_part] = (x, y, genres)
     # save dataset
     if not os.path.isdir(PATH_TO_DATASET):
         os.makedirs(PATH_TO_DATASET, exist_ok=True)
