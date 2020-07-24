@@ -76,9 +76,9 @@ if __name__ == "__main__":
 
 
     data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
-    data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ').encode('utf-8')
+    data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
 
-    with open(args.path_to_save_csv, "a", newline='') as csv_file:
-        writer = csv.writer(csv_file, delimiter=';')
+    with open(args.path_to_save_csv, "a", newline='', encoding='utf-16') as csv_file:
+        writer = csv.writer(csv_file, delimiter=',')
         for x in data:
             writer.writerow([x, data[x]])
