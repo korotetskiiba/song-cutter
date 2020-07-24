@@ -118,7 +118,7 @@ class PreprocessingModule:
     @staticmethod
     def __download_youtube_meta(link, path_to_meta):
         """
-        Downloads video from YouTube using the link (found beforehand in the 1st line of meta-info file).
+        Downloads meta information for video from YouTube using the link (found beforehand in the 1st line of meta-info file).
         :param link: YouTube link to the video;
         :param path_to_meta: path to where meta-info is to be placed after download;
         :return: void
@@ -129,20 +129,30 @@ class PreprocessingModule:
         data = {}
 
         data['link'] = link
-        data['channel'] = yt.get_channel_name()
         data['title'] = yt.get_title()
-        data['codes'] = yt.get_time_codes()
-        codes = yt.get_captions_type()
-        if len(codes) > 0:
-            data['captions'] = yt.get_caption(codes[0].code).replace('\n', ' ').replace(';', ' ')
+        data['proper_names'] = yt.get_proper_name_list()
+        data['songs'] = yt.get_songs_list_from_description()
+        data['description_codes'] = yt.get_time_codes_list_from_description()
+
+        data.update(yt.get_specialized_information())
+
+        captions = yt.get_captions_type_list()
+        if len(captions) > 0:
+            lang_code = captions[0].code
+            data['caption'] = yt.get_caption(lang_code).replace('\n', ' ').replace(';', ' ')
+            data['mus_caption'] = yt.get_music_parts_from_caption(lang_code)
         else:
             data['captions'] = None
-        data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
-        #data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
+            data['mus_caption'] = None
 
-        with open(os.path.join(dir, name)+'.csv', "a", newline='') as csv_file:
-            writer = csv.writer(csv_file, delimiter=';')
-            writer.writerow([data[x] for x in data])
+        data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
+
+        data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
+
+        with open(os.path.join(dir, name)+'.csv', "a", newline='', encoding='utf-16') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            for x in data:
+                writer.writerow([x, data[x]])
 
 
 
