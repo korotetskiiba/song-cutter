@@ -25,6 +25,37 @@ class DataGenerator:
     __path_to_audioset_data = 'DataGenerator/meta_files/bal_train.h5'
     __path_to_labels = 'DataGenerator./meta_files/class_labels_indices.csv'
     __path_to_genres = 'DataGenerator./meta_files/genres_dump.pkl'
+    __path_to_genre_dataset = 'DataGenerator./meta_files/genre_dataset.pkl'
+
+    @classmethod
+    def get_classification_data(cls, relation: list, path_to_pkl = __path_to_genre_dataset,  path_to_save=None, name='sets'):
+        """
+        Get embedding and mask of data
+        :param relation: relation for the capacities of sets (train:val:test);
+        :param path_to_pkl: pkl file containing information about masks and embeddings of genres data set;
+        :param path_to_save: path to folder for saving samples;
+        :param name: name of file to save samples
+        :return: result: a dictionary containing train, validation and test samples
+        """
+
+        # prepare coefficients
+        k = cls.__prepare_coefficients(relation)
+
+        assert isinstance(path_to_pkl, str) and path_to_pkl.endswith('.pkl'), "Wrong path to pkl argument"
+
+        with open(path_to_pkl, "rb") as handle:
+            data_dict = pickle.load(handle)
+        embeddings = data_dict["embeddings_list"]
+        mask = data_dict["mask_list"]
+        # n = len(mask)
+        embeddings = cls.__uint8_to_float32(embeddings)
+        result = cls.__get_split_set(embeddings, mask, k)
+
+        # data_train, mask_train = embeddings[0: int(k[0] * n)], mask[0: int(k[0] * n)]
+        # data_val, mask_val = embeddings[int(k[0] * n): int(k[1] * n)], mask[int(k[0] * n): int(k[1] * n)]
+        # data_test, mask_test = embeddings[int(k[0] * n): int(k[1] * n)], mask[int(k[0] * n): int(k[1] * n)]
+        return result
+
 
     @classmethod
     def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets'):
@@ -40,10 +71,7 @@ class DataGenerator:
         """
 
         # prepare coefficients
-        s = sum(relation)
-        k = [relation[0] / s]
-        k.append((relation[0] + relation[1]) / s)
-        k.append(1)
+        k = cls.__prepare_coefficients(relation)
 
         # choose mode
         if type is KindOfData.AUDIOSET:
@@ -71,6 +99,15 @@ class DataGenerator:
             with open(path_to_save + '/' + name + ".pkl", "wb") as file:
                 pickle.dump(result, file)
         return result
+
+    @staticmethod
+    def __prepare_coefficients(relation):
+        # prepare coefficients
+        s = sum(relation)
+        k = [relation[0] / s]
+        k.append((relation[0] + relation[1]) / s)
+        k.append(1)
+        return k
 
     @classmethod
     def __get_generated_audioset_samples(cls, n_samples, k):
@@ -115,10 +152,22 @@ class DataGenerator:
         if cls.__mask_live is None:
             cls.__generate_live_sample(path)
         # generate samples
-        n = len(cls.__data_live)
-        data_train, mask_train = cls.__data_live[0: int(k[0] * n)], cls.__mask_live[0: int(k[0] * n)]
-        data_val, mask_val = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
-        data_test, mask_test = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
+        result = cls.__get_split_set(cls.__data_live, cls.__mask_live, k)
+        # n = len(cls.__data_live)
+        # data_train, mask_train = cls.__data_live[0: int(k[0] * n)], cls.__mask_live[0: int(k[0] * n)]
+        # data_val, mask_val = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
+        # data_test, mask_test = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
+        # result = {'train': (data_train, mask_train),
+        #           'val': (data_val, mask_val),
+        #           'test': (data_test, mask_test)}
+        return result
+
+    @staticmethod
+    def __get_split_set(data, mask, k):
+        n = len(data)
+        data_train, mask_train = data[0: int(k[0] * n)], mask[0: int(k[0] * n)]
+        data_val, mask_val = data[int(k[0] * n): int(k[1] * n)], mask[int(k[0] * n): int(k[1] * n)]
+        data_test, mask_test = data[int(k[0] * n): int(k[1] * n)], mask[int(k[0] * n): int(k[1] * n)]
         result = {'train': (data_train, mask_train),
                   'val': (data_val, mask_val),
                   'test': (data_test, mask_test)}
