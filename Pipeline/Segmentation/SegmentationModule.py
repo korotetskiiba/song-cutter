@@ -28,8 +28,10 @@ class SegmentationModule:
             y_train: train data labels tensor
             y_valid: validation data labels tensor
             checkpoint_file: name of file where checkpoints will be saved
-            epochs: the number of epochs to fit
-            batch_size: the number of samples in a single batch to fit"""
+            epochs: the number of epochs to fit, set 0 to train until early stopping callback used
+            batch_size: the number of samples in a single batch to fit
+        Returns:
+            model history (the same return as keras model fit)"""
         assert len(x_train.shape) == 3, "X_train shape must be (samples, time, embeddings)"
         assert len(x_valid.shape) == 3, "X_valid shape must be (samples, time, embeddings)"
         assert len(y_train.shape) == 3, "Y_train shape must be (samples, time, 1)"
@@ -42,7 +44,11 @@ class SegmentationModule:
 
         callback_list = self.__define_callback_list(checkpoint_file)
 
-        self.model.fit(x_train, y_tr_crf, batch_size=batch_size, validation_data=(x_valid, y_val_crf), epochs=epochs,
+        SO_MANY_EPOCHS = 500
+        if epochs == 0:  # use early stopping callback as finishing
+            epochs = SO_MANY_EPOCHS
+
+        return self.model.fit(x_train, y_tr_crf, batch_size=batch_size, validation_data=(x_valid, y_val_crf), epochs=epochs,
                        callbacks=callback_list)
 
     def load_from_checkpoint(self, checkpoint_file):
