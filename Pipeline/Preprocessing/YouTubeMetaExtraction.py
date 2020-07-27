@@ -65,8 +65,15 @@ class YouTubeMetaExtraction:
         :param language_code: language code
         :return: caption (str)
         """
+        assert isinstance(language_code, str), "Language code must be a str"
+
+        caption_types = self.get_captions_type_list()
+
+        assert language_code in [caption_types[i].code for i in range(len(caption_types))], "Invalid language code"
+
         cap = self.__video.captions.get_by_language_code(language_code)
         assert cap is not None, "Invalid language code"
+
         return cap.generate_srt_captions()
 
     def get_captions_type_list(self):
@@ -86,10 +93,8 @@ class YouTubeMetaExtraction:
         if language_code not in lang:
             return None
 
-        cap = self.__video.captions.get_by_language_code(language_code)
-        assert cap is not None, "Invalid language code"
+        caption = self.get_caption(language_code)
 
-        caption = cap.generate_srt_captions()
         mus = re.findall('[0-9]+[,:0-9]+ --> [0-9]+[,:0-9]+\n\['+lang[language_code]+']', caption)
         for i in range(len(mus)):
             mus[i] = re.search('[0-9]+[,:0-9]+ --> [0-9]+[,:0-9]+', mus[i]).group().replace('->', '')
