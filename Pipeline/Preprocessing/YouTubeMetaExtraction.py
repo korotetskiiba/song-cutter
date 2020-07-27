@@ -130,7 +130,7 @@ class YouTubeMetaExtraction:
         :return: dict with information (dict)
         """
         info = {}
-        title = re.search('\w[^.]+[-–][^.\n]+', self.get_title())
+        title = re.search('\w[^.]+[-–][^.\n()]+', self.get_title())
         if title is None:
             return {}
         title = title.group()
@@ -151,6 +151,13 @@ class YouTubeMetaExtraction:
         return {'artist': artist}
 
     def get_text(self, start_time, end_time, language_code):
+        """
+        Getter for the text from caption in the specified time interval
+        :param language_code: language code
+        :param start_time: start time
+        :param end_time: end time
+        :return: text (str)
+        """
         assert isinstance(start_time, int) and isinstance(end_time, int), 'time is expected in whole seconds'
         assert start_time < end_time, 'end is less than start'
         assert end_time <= self.get_length(), 'out of bounds'
@@ -177,6 +184,10 @@ class YouTubeMetaExtraction:
         return text
 
     def get_length(self):
+        """
+        Getter for the length of the video
+        :return: length (int)
+        """
         return self.__video.length
 
 
