@@ -2,6 +2,7 @@ import pytube
 import argparse
 import csv
 import re
+from datetime import datetime
 
 KNOWN_CHANNELS = ['Вечерний Ургант', 'НТВ']
 
@@ -149,6 +150,38 @@ class YouTubeMetaExtraction:
         artist = re.sub(': ', '', artist)
         return {'artist': artist}
 
+    def get_text(self, start_time, end_time, language_code):
+        assert isinstance(start_time, int) and isinstance(end_time, int), 'time is expected in whole seconds'
+        assert start_time < end_time, 'end is less than start'
+        assert end_time <= self.get_length(), 'out of bounds'
+
+        caption = self.get_caption(language_code)
+
+        captions_parts = re.split('\n\n', caption)
+
+        parts = []
+        for i in range(len(captions_parts)):
+            time = re.search('[0-9]+:[0-9]+:[0-9]+', captions_parts[i]).group()
+            time = datetime.strptime(time, '%H:%M:%S')
+            time_sec = time.second + time.minute * 60 + time.hour * 3600
+            text = re.split('\n', captions_parts[i])[2]
+            if re.search('\[[\w]+\]', text) is None:
+                parts.append({'time': time_sec, 'text': text})
+
+        parts = [parts[i] for i in range(len(parts)) if (parts[i]['time'] >= start_time and parts[i]['time'] <= end_time)]
+
+        text = ''
+        for i in range(len(parts)):
+            text += parts[i]['text']+' '
+
+        return text
+
+    def get_length(self):
+        return self.__video.length
+
+
+
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Preprocessing')
@@ -175,9 +208,11 @@ if __name__ == "__main__":
     if len(captions) > 0:
         lang_code = captions[0].code
         data['caption'] = yt.get_caption(lang_code).replace('\n', ' ').replace(';', ' ')
+        data['text'] = yt.get_text(0, yt.get_length(), lang_code)
         data['mus_caption'] = yt.get_music_parts_from_caption(lang_code)
     else:
         data['captions'] = None
+        data['text'] = None
         data['mus_caption'] = None
 
     data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')

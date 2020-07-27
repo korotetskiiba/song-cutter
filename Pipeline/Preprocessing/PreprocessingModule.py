@@ -140,9 +140,11 @@ class PreprocessingModule:
         if len(captions) > 0:
             lang_code = captions[0].code
             data['caption'] = yt.get_caption(lang_code).replace('\n', ' ').replace(';', ' ')
+            data['text'] = yt.get_text(0, yt.get_length(), lang_code)
             data['mus_caption'] = yt.get_music_parts_from_caption(lang_code)
         else:
             data['captions'] = None
+            data['text'] = None
             data['mus_caption'] = None
 
         data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
