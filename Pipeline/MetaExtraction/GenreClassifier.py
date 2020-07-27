@@ -11,23 +11,12 @@ class GenreClassifier:
     """
     This class represents pipeline module responsible for genre classification.
     """
-    category_dict = {'blues': 0,
-                     'classical': 1,
-                     'country': 2,
-                     'disco': 3,
-                     'hiphop': 4,
-                     'jazz': 5,
-                     'metal': 6,
-                     'pop': 7,
-                     'reggae': 8,
-                     'rock': 9
-                     }
-
     def __init__(self):
         """
-        Initializes module
+        Initializes module.
         """
         self.model = None
+        self.category_dict = None
 
     def load_from_checkpoint(self, path_to_checkpoint_file):
         """
@@ -40,24 +29,28 @@ class GenreClassifier:
             "Wrong checkpoint file argument!"
         self.model = load_model(path_to_checkpoint_file)
 
-    def exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, type="RNN", epochs=300, batch_size=16):
+    def exec_fit(self, x_train, x_valid, y_train, y_valid,
+                 checkpoint_file, category_dict, type="RNN", epochs=300, batch_size=16):
         """
         Given train and validation sets, builds a model(RNN or CNN) following argument 'type', executes fit and
         saves trained model as checkpoint file at given path.
 
-        :param x_train: train data tensor (number of samples, duration, embedding) (num, 31, 128)
-        :param x_valid: validation data tensor
-        :param y_train: train data labels tensor
-        :param y_valid: validation data labels tensor
-        :param checkpoint_file: name of file where checkpoints will be saved
-        :param type: what type of NN to choose if model not loaded yet("CNN" or "RNN")
-        :param epochs: the number of epochs to fit
-        :param batch_size: the number of samples in a single batch to fit
-        :return:
+        :param x_train: train data tensor (number of samples, duration, embedding) (num, 31, 128);
+        :param x_valid: validation data tensor;
+        :param y_train: train data labels tensor;
+        :param y_valid: validation data labels tensor;
+        :param checkpoint_file: name of file where checkpoints will be saved;
+        :param category_dict: dictionary {<genre number>: <genre name>};
+        :param type: what type of NN to choose if model not loaded yet("CNN" or "RNN");
+        :param epochs: the number of epochs to fit;
+        :param batch_size: the number of samples in a single batch to fit;
+        :return: model saved at given path.
         """
+        if self.category_dict is None:
+            self.category_dict = category_dict
+        callback_list = self.__define_callback_list(checkpoint_file)
         if self.model is None:  # build default model
             self.__build_new_model(type=type)
-        callback_list = self.__define_callback_list(checkpoint_file)
         self.model.fit(x_train, y_train, batch_size=batch_size, validation_data=(x_valid, y_valid),
                        epochs=epochs, callbacks=callback_list)
 
@@ -73,10 +66,17 @@ class GenreClassifier:
         return pred_label
 
     def __build_new_model(self, type="RNN", embed_dim=128):
+        """
+        Builds classifier model according to given type and embedding dimensions.
+
+        :param type: 'RNN' or 'CNN';
+        :param embed_dim: dimension of the embedding used;
+        :return: void. self.model becomes initialized after calling this method.
+        """
         if type == "RNN":
-            self.model = Models.build_RNN_model(num_of_classes=len(category_dict), embed_dim=embed_dim)
+            self.model = Models.build_RNN_model(num_of_classes=len(self.category_dict), embed_dim=embed_dim)
         if type == "CNN":
-            self.model = Models.build_CNN_model(num_of_classes=len(category_dict), embed_dim=embed_dim)
+            self.model = Models.build_CNN_model(num_of_classes=len(self.category_dict), embed_dim=embed_dim)
 
     @staticmethod
     def __define_callback_list(checkpoint_file, custom_callback_list=None):
