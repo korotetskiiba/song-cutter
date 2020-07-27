@@ -19,7 +19,8 @@ class SegmentationModule:
         """Initializes module"""
         self.model = None
 
-    def exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, epochs=30, batch_size=32):
+    def exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, epochs=30, batch_size=32,
+                 callback_list=None):
         """Creates model and launches fit. Trained model stored in self.model
 
         Args:
@@ -42,7 +43,7 @@ class SegmentationModule:
             self.__build_new_model()
         y_tr_crf, y_val_crf = Models.convert_to_crf_format(y_train, y_valid)
 
-        callback_list = self.__define_callback_list(checkpoint_file)
+        callback_list = self.__define_callback_list(checkpoint_file, callback_list)
 
         SO_MANY_EPOCHS = 500
         if epochs == 0:  # use early stopping callback as finishing
@@ -246,11 +247,12 @@ class SegmentationModule:
                                        save_weights_only=False, mode='auto')
 
         # define early stopping
-        early_stopping_callback = EarlyStopping(monitor='val_loss', patience=3, verbose=1)
+        early_stopping_callback = EarlyStopping(monitor='val_loss', patience=3, verbose=1, min_delta=0.0008)
 
-        result_cb_list = [cpt_callback, lr_scheduler_callback, early_stopping_callback]
-        if custom_callback_list is not None:  # add custom callbacks
-            result_cb_list += custom_callback_list
+        if custom_callback_list is None:
+            result_cb_list = [cpt_callback, lr_scheduler_callback, early_stopping_callback]
+        else:
+            result_cb_list = custom_callback_list
 
         return result_cb_list
 
