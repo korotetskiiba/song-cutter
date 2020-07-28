@@ -28,7 +28,7 @@ class DataGenerator:
     __path_to_genre_dataset = 'DataGenerator./meta_files/genre_dataset.pkl'
 
     @classmethod
-    def get_classification_data(cls, relation: list, path_to_pkl = __path_to_genre_dataset,  path_to_save=None, name='sets'):
+    def get_classification_data(cls, relation: list, path_to_pkl = __path_to_genre_dataset,  path_to_save=None, name='classification_set'):
         """
         Get embedding and mask of data
         :param relation: relation for the capacities of sets (train:val:test);
@@ -47,13 +47,12 @@ class DataGenerator:
             data_dict = pickle.load(handle)
         embeddings = data_dict["embeddings_list"]
         mask = data_dict["mask_list"]
-        # n = len(mask)
         embeddings = cls.__uint8_to_float32(embeddings)
-        result = cls.__get_split_set(embeddings, mask, k)
 
-        # data_train, mask_train = embeddings[0: int(k[0] * n)], mask[0: int(k[0] * n)]
-        # data_val, mask_val = embeddings[int(k[0] * n): int(k[1] * n)], mask[int(k[0] * n): int(k[1] * n)]
-        # data_test, mask_test = embeddings[int(k[0] * n): int(k[1] * n)], mask[int(k[0] * n): int(k[1] * n)]
+        mask = cls.__genres_to_vec(data_dict['genres_dict'], mask)
+        result = cls.__get_split_set(embeddings, mask, k)
+        # save if need
+        cls.__save_dataset(result, path_to_save, name)
         return result
 
 
@@ -73,6 +72,7 @@ class DataGenerator:
         # prepare coefficients
         k = cls.__prepare_coefficients(relation)
 
+        result = None
         # choose mode
         if type is KindOfData.AUDIOSET:
             result = cls.__get_generated_audioset_samples(n_samples, k)
@@ -93,12 +93,25 @@ class DataGenerator:
                 data, mask = cls.__shuffle(data, mask)
                 result[key] = (data, mask)
         #save if need
+        cls.__save_dataset(result, path_to_save, name)
+        return result
+
+    @staticmethod
+    def __genres_to_vec(category_dict, y_genres):
+        inv_category_dict = {category_dict[k]: k for k in category_dict}
+        target = np.zeros((len(y_genres), len(category_dict)), dtype=np.float32)
+        for i in range(len(target)):
+            target[i, inv_category_dict[y_genres[i]]] = 1.0
+        return target
+
+    @staticmethod
+    def __save_dataset(result, path_to_save, name):
+        # save dataset if need
         if path_to_save:
             if not os.path.isdir(path_to_save):
                 os.mkdir(path_to_save)
             with open(path_to_save + '/' + name + ".pkl", "wb") as file:
                 pickle.dump(result, file)
-        return result
 
     @staticmethod
     def __prepare_coefficients(relation):
