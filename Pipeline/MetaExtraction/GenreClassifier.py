@@ -1,5 +1,6 @@
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping
-from Pipeline.MetaExtraction.MetaExtrSubmodules import Models
+
+from Pipeline.MetaExtraction.MetaExtrSubmodules import Models, Evaluation
 from keras.models import load_model
 import numpy as np
 
@@ -15,16 +16,29 @@ class GenreClassifier:
         self.model = None
         self.category_dict = None
 
-    def load_from_checkpoint(self, path_to_checkpoint_file):
+    def load_from_checkpoint(self, path_to_checkpoint_file,
+                             genre_dict=None):
         """
         Loads trained model into self.model from checkpoint file.
 
         :param path_to_checkpoint_file: path to the checkpoint(.h5) file;
+        :param genre_dict: dict{<number>:<genre>};
         :return: void.
         """
         assert isinstance(path_to_checkpoint_file, str) and path_to_checkpoint_file.endswith('.h5'),\
             "Wrong checkpoint file argument!"
         self.model = load_model(path_to_checkpoint_file)
+        # default category dict
+        if genre_dict is None:
+            self.category_dict = {0: 'none', 1: 'pop', 2: 'rock',
+                                  3: 'jazz', 4: 'reggae', 5: 'metal',
+                                  6: 'country', 7: 'indi', 8: 'electronic',
+                                  9: 'hiphop', 10: 'disco', 11: 'blues',
+                                  12: 'folk', 13: 'classical', 14: 'experimental',
+                                  15: 'instrumental', 16: 'international'
+                                  }
+        else:
+            self.category_dict = genre_dict
 
     def exec_fit(self, x_train, x_valid, y_train, y_valid,
                  checkpoint_file, category_dict, type="RNN", epochs=300, batch_size=16):
@@ -56,12 +70,12 @@ class GenreClassifier:
         """
         Given a list of samples in form of second-wise embeddings returns a list of labels predicted for each sample.
 
-        :param x_data: train data tensor (number of samples, duration, embedding) (num, 31, 128)
-        :return: labels for samples
+        :param x_data: train data tensor (number of samples, duration, embedding) (num, 31, 128);
+        :return: labels for samples.
         """
         y_pred = self.model.predict(x_data)
-        pred_labels_num = [np.argmax(v) for v in y_pred]
-        pred_labels = [self.category_dict[i] for i in pred_labels_num]
+        pred_labels_nums = [np.argmax(v) for v in y_pred]
+        pred_labels = [self.category_dict[i] for i in pred_labels_nums]
         return pred_labels
 
     def __build_new_model(self, type="RNN", embed_dim=128):
@@ -76,6 +90,20 @@ class GenreClassifier:
             self.model = Models.build_RNN_model(num_of_classes=len(self.category_dict), embed_dim=embed_dim)
         if type == "CNN":
             self.model = Models.build_CNN_model(num_of_classes=len(self.category_dict), embed_dim=embed_dim)
+
+    def evaluate(self, pred_labels, y_test, target_path):
+        """
+        Calculates F1 and accuracy. Plots and saves confusion matrices as png files.
+
+        :param pred_labels: labels predicted by the model;
+        :param y_test: ground truth labels;
+        :param target_path: path to save artefacts;
+        :return: void.
+        """
+        # reformat label-info from vecs to words
+        target_labels = [self.category_dict[np.nonzero(mask)[0][0]] for mask in y_test]
+        Evaluation.count_metrics_on_sample(pred_labels, target_labels)
+        Evaluation.cnf_matrices(pred_labels, target_labels, self.category_dict, target_path)
 
     @staticmethod
     def __define_callback_list(checkpoint_file, custom_callback_list=None):
