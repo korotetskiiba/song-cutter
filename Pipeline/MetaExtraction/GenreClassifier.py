@@ -1,10 +1,7 @@
-from sklearn.metrics import log_loss, f1_score, classification_report, confusion_matrix, accuracy_score
 from keras.callbacks import ModelCheckpoint, LearningRateScheduler, EarlyStopping
 from Pipeline.MetaExtraction.MetaExtrSubmodules import Models
-from sklearn.model_selection import train_test_split
 from keras.models import load_model
 import numpy as np
-import joblib
 
 
 class GenreClassifier:
@@ -49,7 +46,8 @@ class GenreClassifier:
         if self.category_dict is None:
             self.category_dict = category_dict
         callback_list = self.__define_callback_list(checkpoint_file)
-        if self.model is None:  # build default model
+        # build default model
+        if self.model is None:
             self.__build_new_model(type=type)
         self.model.fit(x_train, y_train, batch_size=batch_size, validation_data=(x_valid, y_valid),
                        epochs=epochs, callbacks=callback_list)
@@ -62,8 +60,9 @@ class GenreClassifier:
         :return: labels for samples
         """
         y_pred = self.model.predict(x_data)
-        pred_label = [np.argmax(v) for v in y_pred]
-        return pred_label
+        pred_labels_num = [np.argmax(v) for v in y_pred]
+        pred_labels = [self.category_dict[i] for i in pred_labels_num]
+        return pred_labels
 
     def __build_new_model(self, type="RNN", embed_dim=128):
         """
@@ -105,37 +104,3 @@ class GenreClassifier:
             result_cb_list.extend(custom_callback_list)
 
         return result_cb_list
-
-
-if __name__ == "__main__":
-    data_dict = joblib.load("D:\current_work\!!!KURS\EPAM\song-cutter\stuff\genres_dump.pkl")
-    labels = data_dict["label_list"]
-    embedings_list = data_dict["embedings_list"]
-    category_dict = data_dict["category_dict"]
-    inv_category_dict = {category_dict[k]: k for k in category_dict}
-
-    seq_length = embedings_list[0].shape[0]
-    embed_dim = embedings_list[0].shape[1]
-    nb_classes = len(category_dict)
-
-    target = np.zeros((len(labels), len(category_dict)), dtype=np.float32)
-    data = np.zeros((len(embedings_list), seq_length, embed_dim), dtype=np.float32)
-
-    for i in range(len(target)):
-        target[i, inv_category_dict[labels[i]]] = 1.0
-        data[i, :, :] = embedings_list[i]
-
-    labels = [inv_category_dict[k] for k in labels]
-
-    tr_data, te_data, y_tr, y_te = train_test_split(data, target, test_size=0.2, stratify=labels)
-    tr_data, val_data, y_tr, y_val = train_test_split(tr_data, y_tr, test_size=0.2)
-
-    filepath = 'D:\current_work\!!!KURS\EPAM\song-cutter\model_cpt\gru_64_avg_pool_gaus_do_batch_16.h5'
-    gc = GenreClassifier()
-    # gc.exec_fit(tr_data, val_data, y_tr, y_val, filepath, type="RNN")
-    gc.load_from_checkpoint(filepath)
-    pred_label = gc.predict(te_data)
-    true_label = [np.argmax(v) for v in y_te]
-    print(pred_label)
-    print(true_label)
-    print(f1_score(true_label, pred_label, average="micro"))
