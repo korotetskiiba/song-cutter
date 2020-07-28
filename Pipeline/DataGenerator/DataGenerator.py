@@ -164,7 +164,8 @@ class DataGenerator:
             data_dict = pickle.load(handle)
         live_embed = cls.__uint8_to_float32([data_dict['embeddings_list']][0])
         mask_list = cls.__bool_to_float32([data_dict['mask_list']][0])
-        genre_list = cls.__uint8_to_float32([data_dict['genre_mask_list']][0])
+        #genre_list = cls.__uint8_to_float32([data_dict['genre_mask_list']][0])
+        genre_list = np.array(data_dict['genre_mask_list'])
 
         #? why?
         if live_embed.shape[1] != 100:
@@ -191,7 +192,8 @@ class DataGenerator:
 
     @staticmethod
     def __mask_scaling(mask, new_size):
-        new_mask = np.zeros([mask.shape[0], new_size], dtype=np.float32)
+        #new_mask = np.zeros([mask.shape[0], new_size], dtype=np.float32)
+        new_mask = np.zeros([mask.shape[0], new_size], dtype=mask.dtype)
         ratio = new_size/mask.shape[1]
 
         for i, slice in enumerate(mask):
