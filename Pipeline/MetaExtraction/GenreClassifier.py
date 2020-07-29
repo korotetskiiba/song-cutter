@@ -102,6 +102,7 @@ class GenreClassifier:
         """
         # reformat label-info from vecs to words
         target_labels = [self.category_dict[np.nonzero(mask)[0][0]] for mask in y_test]
+
         Evaluation.count_metrics_on_sample(pred_labels, target_labels)
         Evaluation.cnf_matrices(pred_labels, target_labels, self.category_dict, target_path)
 

@@ -1,4 +1,4 @@
-from keras.layers import Conv1D
+from keras.layers import Conv1D, TimeDistributed
 from keras.layers import GlobalAveragePooling1D
 from keras.models import Sequential
 from keras.layers.wrappers import Bidirectional

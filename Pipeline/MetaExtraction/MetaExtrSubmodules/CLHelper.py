@@ -1,4 +1,3 @@
-import numpy as np
 import argparse
 import pickle
 
@@ -76,7 +75,7 @@ def __fit(genre_classifier_module, type, path_to_pkl, checkpoint_file, target_pa
     """
     (category_dict, (x_train, y_train), (x_val, y_val), (x_test, y_test)) = __tensors_from_pkl(path_to_pkl)
     genre_classifier_module.exec_fit(x_train, x_val, y_train, y_val, checkpoint_file, category_dict, type=type)
-    #  genre_classifier_module.evaluate(x_test, y_test, target_path)
+    genre_classifier_module.evaluate(x_test, y_test, target_path)
 
 
 def __load_predict(genre_classifier_module, path_to_pkl, checkpoint_file):
@@ -104,18 +103,9 @@ def __load_evaluate(genre_classifier_module, path_to_pkl, checkpoint_file, targe
     :param target_path: path to save evaluation summary (plots and metrics);
     :return: void.
     """
-    # TODO: implement eval method
     (category_dict, (_, _), (_, _), (x_test, y_test)) = __tensors_from_pkl(path_to_pkl)
     genre_classifier_module.load_from_checkpoint(checkpoint_file)
     genre_classifier_module.evaluate(x_test, y_test, target_path)
-
-
-def genres_to_vec(category_dict, y_genres):
-    inv_category_dict = {category_dict[k]: k for k in category_dict}
-    target = np.zeros((len(y_genres), len(category_dict)), dtype=np.float32)
-    for i in range(len(target)):
-        target[i, inv_category_dict[y_genres[i]]] = 1.0
-    return target
 
 
 def __tensors_from_pkl(path_to_file):
@@ -127,18 +117,9 @@ def __tensors_from_pkl(path_to_file):
     :return: category dict and 3 pairs, each containing data and ground truth labels:
              (x_train, y_train), (x_val, y_val), (x_test, y_test).
     """
+    # TODO: generate such a file in DG so as sets were already in the pickle
     with open(path_to_file, "rb") as f:
         data_dict = pickle.load(f)
 
-    category_dict = data_dict["category_dict"]
-    (x_train, y_train) = data_dict["train"]
-    (x_val, y_val) = data_dict["val"]
-    (x_test, y_test) = data_dict["test"]
-
-    # labels to vecs
-    y_train = genres_to_vec(category_dict, y_train)
-    y_val = genres_to_vec(category_dict, y_val)
-    y_test = genres_to_vec(category_dict, y_test)
-
-    return category_dict, (x_train, y_train), (x_val, y_val), (x_test, y_test)
+    return data_dict["category_dict"], data_dict["train"], data_dict["val"], data_dict["test"]
 

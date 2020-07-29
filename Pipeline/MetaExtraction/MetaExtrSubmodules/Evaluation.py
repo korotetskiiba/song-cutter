@@ -1,6 +1,6 @@
 import itertools
 import os
-from sklearn.metrics import f1_score, confusion_matrix, accuracy_score
+from sklearn.metrics import f1_score, confusion_matrix, accuracy_score, classification_report
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -36,6 +36,15 @@ def __plot_confusion_matrix(cm, classes, path, normalize=False, title='Confusion
 
 
 def cnf_matrices(pred_labels, target_labels, category_dict, path):
+    """
+    Calculates, plots and saves to path normalized and non-normalized confusion matrices.
+
+    :param pred_labels: labels predicted by the model;
+    :param target_labels: ground truth labels;
+    :param category_dict: dict{<number>:<genre>};
+    :param path: path to dir where png's of matrices are to be saved;
+    :return: void.
+    """
     cnf_matrix = confusion_matrix(target_labels, pred_labels)
     class_list = [category_dict[v] for v in category_dict if category_dict[v] != 'none']
 
@@ -60,7 +69,14 @@ def cnf_matrices(pred_labels, target_labels, category_dict, path):
 
 
 def count_metrics_on_sample(pred_labels, target_labels):
-    print("F1 score:" + str(f1_score(target_labels, pred_labels, average="micro")))
+    """
+    Creates classification report.
+
+    :param pred_labels: labels predicted by the model;
+    :param target_labels: ground truth labels;
+    :return: void.
+    """
     print("Accuracy:" + str(accuracy_score(target_labels, pred_labels)))
+    print(classification_report(target_labels, pred_labels))
 
 
