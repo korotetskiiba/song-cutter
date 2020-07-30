@@ -1,0 +1,4 @@
+https://www.youtube.com/watch?v=D7W6bgt7xHE&list=PLm3gZzAZXT4v1Rd893pQijsHWBrVt43Lr&index=50
+00:00:00,00:00:33,not_song
+00:00:33,00:03:10,song,hiphop
+00:03:10,00:03:40,not_song
