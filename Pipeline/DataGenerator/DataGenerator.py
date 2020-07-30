@@ -17,6 +17,7 @@ class KindOfData(Enum):
 
 class DataGenerator:
     #for live sets
+    __genre_list = None
     __data_live = None
     __mask_live = None
     #for audio sets
@@ -27,7 +28,8 @@ class DataGenerator:
     __path_to_genres = 'DataGenerator./meta_files/genres_dump.pkl'
 
     @classmethod
-    def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets'):
+    def get_generated_sample(cls, type: KindOfData, relation: list, n_samples:int=10000, path_to_live_data=None, path_to_save=None, name='sets',
+                             need_shuffle:bool=True):
         """
         Get embedding and mask of data
         :param type: type of set to get;
@@ -36,6 +38,7 @@ class DataGenerator:
         :param path_to_live_data: pkl file containing information about masks and embeddings of samples from live set
         :param path_to_save: path to folder for saving samples;
         :param name: name of file to save samples
+        :param need_shuffle: flag, False if it's not needed to shuffle data;
         :return: result: a dictionary containing train, validation and test samples
         """
 
@@ -49,20 +52,21 @@ class DataGenerator:
         if type is KindOfData.AUDIOSET:
             result = cls.__get_generated_audioset_samples(n_samples, k)
         elif type is KindOfData.LIVE:
-            result = cls.__get_generated_live_samples(path_to_live_data, k)
+            result = cls.__get_generated_live_samples(path_to_live_data, k, need_shuffle)
         elif type is KindOfData.ALL:
             # generate samples of both type
             result1 = cls.__get_generated_audioset_samples(n_samples, k)
-            result2 = cls.__get_generated_live_samples(path_to_live_data, k)
+            result2 = cls.__get_generated_live_samples(path_to_live_data, k, need_shuffle)
             result = {}
             # mixed samples
             for key in result1:
                 data1, mask1 = result1[key]
-                data2, mask2 = result2[key]
+                data2, mask2, _ = result2[key]  # ignore genres as there are no genres in audioset subset
                 data = np.vstack([data1, data2])
                 mask = np.vstack([mask1, mask2])
                 # shuffle embeddings and masks of different sets in the same order
-                data, mask = cls.__shuffle(data, mask)
+                if need_shuffle:
+                    data, mask = cls.__shuffle(data, mask)
                 result[key] = (data, mask)
         #save if need
         if path_to_save:
@@ -104,24 +108,30 @@ class DataGenerator:
         return result
 
     @classmethod
-    def __get_generated_live_samples(cls, path, k):
+    def __get_generated_live_samples(cls, path, k, need_shuffle):
         """ Get embedding and mask of live data (Youtube video, film etc)
                    :param path: pkl file containing information about masks and embeddings of samples from live set;
                    :param k: coefficients for the capacities of sets (train:val:test);
+                   :param need_shuffle: flag, True if needed shuffling;
                    :return: result: a dictionary containing train, validation and test live samples
                """
 
         # prepare data to generate samples if necessary
         if cls.__mask_live is None:
-            cls.__generate_live_sample(path)
+            cls.__generate_live_sample(path, need_shuffle=need_shuffle)
         # generate samples
         n = len(cls.__data_live)
-        data_train, mask_train = cls.__data_live[0: int(k[0] * n)], cls.__mask_live[0: int(k[0] * n)]
-        data_val, mask_val = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
-        data_test, mask_test = cls.__data_live[int(k[0] * n): int(k[1] * n)], cls.__mask_live[int(k[0] * n): int(k[1] * n)]
-        result = {'train': (data_train, mask_train),
-                  'val': (data_val, mask_val),
-                  'test': (data_test, mask_test)}
+        data_train, mask_train, genres_train = cls.__data_live[0: int(k[0] * n)], \
+                                               cls.__mask_live[0: int(k[0] * n)], cls.__genre_list[0: int(k[0] * n)]
+        data_val, mask_val, genres_val = cls.__data_live[int(k[0] * n): int(k[1] * n)], \
+                                         cls.__mask_live[int(k[0] * n): int(k[1] * n)], \
+                                         cls.__genre_list[int(k[0] * n): int(k[1] * n)]
+        data_test, mask_test, genres_test = cls.__data_live[int(k[0] * n): int(k[1] * n)],\
+                                            cls.__mask_live[int(k[0] * n): int(k[1] * n)],\
+                                            cls.__genre_list[int(k[0] * n): int(k[1] * n)]
+        result = {'train': (data_train, mask_train, genres_train),
+                  'val': (data_val, mask_val, genres_val),
+                  'test': (data_test, mask_test, genres_test)}
         return result
 
     @classmethod
@@ -142,9 +152,10 @@ class DataGenerator:
         cls.__music_data = np.vstack([cls.__music_data, music_data_new_res])
 
     @classmethod
-    def __generate_live_sample(cls, path):
+    def __generate_live_sample(cls, path, need_shuffle):
         """Generate samples from YouTube video, films etc
                 :param path: pkl file containing information about masks and embeddings of samples from live set
+                :need_shuffle: flag, True if shuffling data is needed
                 :return: void
         """
         # read data
@@ -153,17 +164,24 @@ class DataGenerator:
             data_dict = pickle.load(handle)
         live_embed = cls.__uint8_to_float32([data_dict['embeddings_list']][0])
         mask_list = cls.__bool_to_float32([data_dict['mask_list']][0])
+        #genre_list = cls.__uint8_to_float32([data_dict['genre_mask_list']][0])
+        genre_list = np.array(data_dict['genre_mask_list'])
 
         #? why?
         if live_embed.shape[1] != 100:
             live_embed = cls.__x_reshape(live_embed)
 
         mask_list = cls.__mask_scaling(mask_list, 100)
+        genre_list = cls.__mask_scaling(genre_list, 100)
         # shuffle embeddings and masks in the same order
-        cls.__data_live, cls.__mask_live = cls.__shuffle(live_embed, mask_list)
+        if need_shuffle:
+            cls.__data_live, cls.__mask_live, cls.__genre_list = cls.__shuffle(live_embed, mask_list, genre_list)
+        else:
+            cls.__data_live, cls.__mask_live, cls.__genre_list = (live_embed, mask_list, genre_list)
         # np.zeros((N_samples, seq_len, 1), dtype=np.float32)
         sh = cls.__mask_live.shape
         cls.__mask_live = cls.__mask_live.reshape(sh[0], sh[1], 1)
+        cls.__genre_list = cls.__genre_list.reshape(sh[0], sh[1], 1)
 
     @staticmethod
     def __x_reshape(live_embed):
@@ -174,41 +192,50 @@ class DataGenerator:
 
     @staticmethod
     def __mask_scaling(mask, new_size):
-        new_mask = np.zeros([mask.shape[0], new_size], dtype=np.float32)
+        #new_mask = np.zeros([mask.shape[0], new_size], dtype=np.float32)
+        new_mask = np.zeros([mask.shape[0], new_size], dtype=mask.dtype)
         ratio = new_size/mask.shape[1]
 
         for i, slice in enumerate(mask):
-            index1 = np.argwhere(slice == 1)
+            index1 = np.argwhere(slice != 0)
             if len(index1) == 0:
                 continue
+            mask_class = slice[index1[0, 0]]
             index2 = 0
             new_slice = np.zeros(new_size, dtype=np.float32)
-            while len(np.argwhere(slice[index2:] == 1)) != 0:
-                index1 = index2 + np.argwhere(slice[index2:] == 1)[0][0]
+            while len(np.argwhere(slice[index2:] == mask_class)) != 0:
+                index1 = index2 + np.argwhere(slice[index2:] == mask_class)[0][0]
                 if len(np.argwhere(slice[index1:] == 0)) == 0:
-                    new_slice[int(index1 * ratio):] = 1.0
+                    new_slice[int(index1 * ratio):] = mask_class
                     break
                 index2 = index1 + np.argwhere(slice[index1:] == 0)[0][0]
-                new_slice[int(index1 * ratio):int(index2 * ratio)] = 1.0
+                new_slice[int(index1 * ratio):int(index2 * ratio)] = mask_class
             new_mask[i] = new_slice
         return new_mask
 
 
 
     @staticmethod
-    def __shuffle(arr1, arr2):
+    def __shuffle(arr1, arr2, arr3=None):
         """Shuffles the arrays in the same order
             :param arr1: numpy array to shuffling
             :param arr2: numpy array to shuffling
-            :return (new_arr1, new_arr2): arrays shuffled in the same order
+            :param arr3: numpy array to shuffling
+            :return (new_arr1, new_arr2, new_arr3): arrays shuffled in the same order
         """
         order = np.random.permutation(arr1.shape[0])
         new_arr1 = np.zeros(arr1.shape)
         new_arr2 = np.zeros(arr2.shape)
+        new_arr3 = np.zeros(arr2.shape)
         for i in range(len(order)):
             new_arr1[order[i]] = arr1[i]
             new_arr2[order[i]] = arr2[i]
-        return new_arr1, new_arr2
+            if arr3 is not None:
+                new_arr3[order[i]] = arr3[i]
+        if arr3 is not None:
+            return new_arr1, new_arr2, arr3
+        else:
+            return new_arr1, new_arr2
 
     @classmethod
     def __generate_data_sample(cls, n_music_min,n_music_max, n_speech_min, n_speech_max,
