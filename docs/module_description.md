@@ -167,35 +167,59 @@ python DataGenerator.py -t as -n 10000 -r 5,3,1 -pts outout_folder
 ### funcs:
 implemented methods:
 - `__init__(self)`: initialize `SegmentationModule` block
-- `exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, epochs=30, batch_size=32)`: builds default model if it hasn't been built yet and executes model fit on passed data tensors
+- `exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, epochs=30, batch_size=32, 
+   callback_list=None)`: builds default model if it hasn't been built yet and executes model fit on passed data tensors
+	
 	input: 
 	- `x_train` - train data of shape `(num_samples, time, embeddings)`
 	- `x_valid` - validation data of the same shape
 	- `y_train` - train data labels of shape `(num_samples, time, 1)`
 	- `y_valid` - validation data of the same shape
 	- `checkpoint_file` - file to save checkpoints (has '.h5' extension)
-	- `epochs` - the number of epochs to fit
+	- `epochs` - the number of epochs to fit (set `0` to fit on a huge number of epochs, to use early stopping callback)
 	- `batch_size` - the batch size to fit
+	- `callback_list` - the list of callbacks to use in fit (if `None`, default callbacks will be assigned)
 - `load_from_checkpoint(self, checkpoint_file)`: load model from checkpoint (consider it is default CRF model)
+	
 	input:
 	- `checkpoint_file` - file to load model weights (has '.h5' extension)
 - `predict(self, x_data)`: predict label for passed data tensor
+	
 	input:
 	- `x_data` - data tensor of shape `(num_samples, time, embeddings)`
 	output: the list of interval in the format mentioned above
+- `predict_with_genre(self, x_data, genre_duration=31, need_smoothing=True)`: get prediction with embeddings for genre classification
+    
+    input:
+    - `x_data` - data tensor of shape `(num_samples, time, embeddings)`
+    - `genre_duration` - how many embeddings are used in genre classifier (31 embedding = 30 seconds)
+    - `need_smoothing` - `True` if the prediction mask smoothing is needed
+    output (tuple):
+    - `time_intervals` - the list of interval in the format mentioned above
+    - `x_genres_embed` - tensor of shape `(segmentated_parts, genre_duration, embed)` of embeddings ready for genre classifier predict
 - `get_model(self)`: get current keras model used in the module to predict and evaluate
 	output: keras model
 - `cut_file(path_to_file, target_path, prediction_intervals)`: cut video or sound file to slices mentioned in `prediction_intervals`.
+	
 	input:
 	- `path_to_file` - path to video or sound file (extension must be '.mp4' or '.wav')
 	- `target_path` - path to target directory to save slices, with name prefix used for each slice
 	- `prediction_intervals` - the list of time intervals got from `predict(self, x_data)`
-- `evaluate(self, x_test, y_test, target_path, plot_time_clamp=1000)`: evaluate model (count metrics, draw ROC curve plot, draw plot with the ground truth mask and predicted mask)
+- `evaluate(self, x_test, y_test, target_path, genres_mask=None, genres_dict=None, genres_clamp=31,
+                 plot_time_clamp=1000)`: evaluate model (count metrics, draw ROC curve plot, draw plot with the ground truth mask and predicted mask). May return segmentated embeddings and ground truth genres masks for them to use in genre classifier.
+                 
 	input:
 	- `x_test` - data tensor of shape `(samples, time, embeddings)`
 	- `y_test` - the ground truth tensor of shape `(samples, time, 1)`
 	- `target_path` - directory where plots and metrics will be saved
+	- `genres_mask` - data tensor of genres masks (`None` if don't need genre classification)
+	- `genres_dict` - dict with keys as numbers of genre classes and values as corresponding classifier genres labels
+	- `genres_clamp` - length of piece suitable for classifier to predict genre (31 embeddings == 30 seconds)
 	- `plot_time_clamp` - the duration of the part of the mask to make plot
+
+    output:
+    - `None` if `genres_mask` is none (no embeddings for classification needed)
+    - tuple `(x_genres, y_genres)` where `x_genres` is embedding tensor to classify genres and `y_genres` is the ground truth corresponding mask tensor
 
 ### Usage example:
 
@@ -231,9 +255,9 @@ segm_module.cut_file(video/videofile.mp4", "video/cut", intervals)
 evaluate: calculate and save metrics, draw plots:
 
 ```
-save_file = "evaluate_1"
+save_dir = "evaluate_1"
 
-segm_module.evaluate(x_test, y_test, save_file)
+segm_module.evaluate(x_test, y_test, save_dir)
 ```
 
 #### CLI
