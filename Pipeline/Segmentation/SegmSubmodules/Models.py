@@ -68,7 +68,7 @@ def predict_track_pack(x_data, crf_model):
         if tracks * SEQ_LEN < single_dim_sample:  # the last piece
             sample = x_data[track_num, tracks * SEQ_LEN:, :].copy().reshape(1, x_data.shape[1], x_data.shape[2])
             q = crf_model.predict(sample)  # predict on the last piece
-            sample_mask[track_num, tracks * SEQ_LEN:, 0] = q
+            sample_mask[track_num, tracks * SEQ_LEN:, 0] = q[0, :, 0]
 
     sample_mask = sample_mask.reshape(sample_mask.shape[0], sample_mask.shape[1])  # reshape mask array of tensors
     return sample_mask
