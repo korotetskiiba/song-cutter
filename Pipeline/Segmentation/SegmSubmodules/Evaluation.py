@@ -36,8 +36,7 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_list=No
         metrics_list: list with custom metrics,
         metric function has 2 arguments: ground_truth and prediction. If None, default metrics used"""
     if metrics_list is None:  # assign default metrics
-        metrics_list = [f1_score, log_loss, roc_auc_score, precision_score, recall_score, __intersection_over_union,
-                        __corr]
+        metrics_list = [f1_score, log_loss, roc_auc_score, precision_score, recall_score, __intersection_over_union]
 
     with open(json_file, 'w') as f:
         json_dict = {}  # init dictionary to save
@@ -56,8 +55,11 @@ def count_metrics_on_sample(prediction, ground_truth, json_file, metrics_list=No
                     json_dict[metric.__name__] += float(metric(ground_truth[current_num, :],
                                                                prediction[current_num, :]))
 
-        for metric in metrics_list:  # normalize
-            json_dict[metric.__name__] /= divisor
+        if divisor == 0:  # check zero division to avoid pipeline fail
+            json_dict.update({'Warning': "Zero divizor"})
+        else:
+            for metric in metrics_list:  # normalize
+                json_dict[metric.__name__] /= divisor
 
         json.dump(json_dict, f)  # save dictionary
 

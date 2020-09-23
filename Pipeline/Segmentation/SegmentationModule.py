@@ -18,6 +18,7 @@ class SegmentationModule:
     def __init__(self):
         """Initializes module"""
         self.model = None
+        self.__epoch_limit = 500  # to fit model with early stopping
 
     def exec_fit(self, x_train, x_valid, y_train, y_valid, checkpoint_file, epochs=30, batch_size=32,
                  callback_list=None):
@@ -31,6 +32,7 @@ class SegmentationModule:
             checkpoint_file: name of file where checkpoints will be saved
             epochs: the number of epochs to fit, set 0 to train until early stopping callback used
             batch_size: the number of samples in a single batch to fit
+            callback_list: list of callbacks to use in fit
         Returns:
             model history (the same return as keras model fit)"""
         assert len(x_train.shape) == 3, "X_train shape must be (samples, time, embeddings)"
@@ -45,9 +47,8 @@ class SegmentationModule:
 
         callback_list = self.__define_callback_list(checkpoint_file, callback_list)
 
-        SO_MANY_EPOCHS = 500
         if epochs == 0:  # use early stopping callback as finishing
-            epochs = SO_MANY_EPOCHS
+            epochs = self.__epoch_limit
 
         return self.model.fit(x_train, y_tr_crf, batch_size=batch_size, validation_data=(x_valid, y_val_crf), epochs=epochs,
                        callbacks=callback_list)
