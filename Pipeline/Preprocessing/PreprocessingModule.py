@@ -5,6 +5,8 @@ from tqdm import tqdm
 import os
 import argparse
 import pickle
+from Pipeline.Preprocessing.YouTubeMetaExtraction import YouTubeMetaExtraction
+import csv
 
 
 class PreprocessingModule:
@@ -117,6 +119,51 @@ class PreprocessingModule:
         name = str(os.path.basename(path_to_video).split(".")[0])
         yt = YouTube(link)
         yt.streams.first().download(dir, filename=name)
+
+        PreprocessingModule.__download_youtube_meta(link, path_to_video)
+
+    @staticmethod
+    def __download_youtube_meta(link, path_to_meta):
+        """
+        Downloads meta information for video from YouTube using the link (found beforehand in the 1st line of meta-info file).
+        :param link: YouTube link to the video;
+        :param path_to_meta: path to where meta-info is to be placed after download;
+        :return: void
+        """
+        dir = os.path.dirname(path_to_meta)
+        name = str(os.path.basename(path_to_meta).split(".")[0])
+        yt = YouTubeMetaExtraction(link)
+        data = {}
+
+        data['link'] = link
+        data['title'] = yt.get_title()
+        data['proper_names'] = yt.get_proper_name_list()
+        data['songs'] = yt.get_songs_list_from_description()
+        data['description_codes'] = yt.get_time_codes_list_from_description()
+
+        data.update(yt.get_specialized_information())
+
+        captions = yt.get_captions_type_list()
+        if len(captions) > 0:
+            lang_code = captions[0].code
+            data['caption'] = yt.get_caption(lang_code).replace('\n', ' ').replace(';', ' ')
+            data['text'] = yt.get_text(0, yt.get_length(), lang_code)
+            data['mus_caption'] = yt.get_music_parts_from_caption(lang_code)
+        else:
+            data['captions'] = None
+            data['text'] = None
+            data['mus_caption'] = None
+
+        data['description'] = yt.get_description().replace('\n', ' ').replace(';', ' ')
+
+        data['html'] = yt.get_html().replace('\n', ' ').replace(';', ' ')
+
+        with open(os.path.join(dir, name)+'.csv', "a", newline='', encoding='utf-16') as csv_file:
+            writer = csv.writer(csv_file, delimiter=',')
+            for x in data:
+                writer.writerow([x, data[x]])
+
+
 
     @staticmethod
     def __preprocess_meta(path_to_meta):
