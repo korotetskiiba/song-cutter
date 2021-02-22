@@ -66,7 +66,9 @@ def predict_track_pack(x_data, crf_model):
             q = q[0, :, 0]
             sample_mask[track_num, i * SEQ_LEN:(i + 1) * SEQ_LEN, 0] = q  # add to the sample mask
         if tracks * SEQ_LEN < single_dim_sample:  # the last piece
-            sample = x_data[track_num, tracks * SEQ_LEN:, :].copy().reshape(1, x_data.shape[1], x_data.shape[2])
+            #sample = x_data[track_num, tracks * SEQ_LEN:, :].copy().reshape(1, x_data.shape[1], x_data.shape[2])
+            remaining = single_dim_sample - tracks * SEQ_LEN
+            sample = x_data[track_num, tracks * SEQ_LEN:, :].copy().reshape(1, remaining, x_data.shape[2])
             q = crf_model.predict(sample)  # predict on the last piece
             sample_mask[track_num, tracks * SEQ_LEN:, 0] = q[0, :, 0]
 
